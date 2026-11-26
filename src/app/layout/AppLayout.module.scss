@@ -1,0 +1,31 @@
+@use '@/styles/tokens' as *;
+
+// The side safe areas (iPhone Duo's status-bar column, landscape notches) are kept
+// clear here and painted in the chrome color, so they read as part of the window frame.
+.root {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+  padding-left: var(--os-safe-left);
+  padding-right: var(--os-safe-right);
+  background: var(--os-surface);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background: var(--os-bg);
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+
+  // On phones the bottom nav clears the home indicator; elsewhere the page does.
+  @media (min-width: $bp-phone) {
+    padding-bottom: var(--os-safe-bottom);
+  }
+}

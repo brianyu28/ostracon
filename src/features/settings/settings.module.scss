@@ -1,0 +1,111 @@
+// Shared layout for settings sections.
+@use '@/styles/tokens' as *;
+
+.section {
+  max-width: 760px;
+  padding: $space-4;
+
+  @include phone {
+    padding: $space-3;
+  }
+
+  & + & {
+    border-top: 1px solid var(--os-border);
+  }
+}
+
+.heading {
+  margin: 0 0 $space-3;
+  font-size: $font-md;
+  font-weight: 600;
+}
+
+.note {
+  margin: 0 0 $space-3;
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    padding: 0 $space-2 $space-1;
+    font-size: $font-xs;
+    font-weight: 500;
+    color: var(--os-text-faint);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    height: var(--os-row-height);
+    padding: 0 $space-2;
+    border-top: 1px solid var(--os-border);
+    vertical-align: middle;
+  }
+
+  tr:hover td {
+    background: var(--os-surface);
+  }
+}
+
+.num {
+  text-align: right !important;
+
+  @include tabular;
+}
+
+.dim {
+  color: var(--os-text-faint);
+}
+
+.grip {
+  width: 22px;
+  padding-right: 0 !important;
+}
+
+.dragging td {
+  background: var(--os-surface-active) !important;
+  box-shadow: 0 1px 0 var(--os-border);
+}
+
+.actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right !important;
+}
+
+.addRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: $space-3 0;
+}
+
+.needsFile {
+  padding: $space-4;
+  color: var(--os-text-dim);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: $space-1 $space-3;
+  margin: 0;
+
+  dt {
+    color: var(--os-text-dim);
+  }
+
+  dd {
+    margin: 0;
+
+    @include tabular;
+  }
+}
+
+.mono {
+  font-family: var(--os-font-mono);
+}

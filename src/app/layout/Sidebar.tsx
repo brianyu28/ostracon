@@ -1,0 +1,98 @@
+import { ActionIcon } from '@mantine/core';
+import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
+import { collectionPath, routes, type AppRoute } from '@/app/routes';
+import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
+import { useDocStore } from '@/store/docStore';
+import { usePrefs } from '@/store/prefsStore';
+import { NavItem } from './NavItem';
+import styles from './Sidebar.module.scss';
+
+const visible = routes.filter((r) => !r.hidden);
+const top = visible.filter((r) => r.path !== '/settings');
+const bottom = visible.filter((r) => r.path === '/settings');
+
+function RouteItem({ route }: { route: AppRoute }) {
+  const Icon = route.icon;
+  return (
+    <NavItem
+      href={route.path}
+      title={route.title}
+      icon={(className) => <Icon className={className} stroke={1.75} aria-hidden />}
+      variant="sidebar"
+    />
+  );
+}
+
+/** The open document's collections, in their order. */
+function SidebarCollections() {
+  const collections = useDocStore((s) => s.doc?.collections);
+  if (!collections) return null;
+  const list = Object.values(collections).sort((a, b) => a.order - b.order);
+  if (list.length === 0) return null;
+  return (
+    <div className={styles.collections}>
+      <div className={styles.sectionLabel}>Collections</div>
+      <div className={styles.items}>
+        {list.map((c) => (
+          <NavItem
+            key={c.id}
+            href={collectionPath(c.id)}
+            title={c.name}
+            icon={(className) => (
+              <CollectionIcon icon={c.icon} className={className} stroke={1.75} aria-hidden />
+            )}
+            variant="sidebar"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Desktop sidebar. Can be collapsed to an icon rail to give content more room;
+ * on tablet it is always a rail, and on phone it's replaced by the bottom nav.
+ */
+export function Sidebar() {
+  const collapsed = usePrefs((s) => s.sidebarCollapsed);
+  const setPref = usePrefs((s) => s.setPref);
+  const setCollapsed = (value: boolean) => {
+    setPref('sidebarCollapsed', value);
+  };
+  const ToggleIcon = collapsed ? IconLayoutSidebarLeftExpand : IconLayoutSidebarLeftCollapse;
+  const toggleLabel = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+
+  return (
+    <nav className={styles.root} aria-label="Main" data-collapsed={collapsed || undefined}>
+      <div className={styles.brand}>
+        <img src="favicon.svg" alt="" className={styles.logo} />
+        <span className={styles.name}>Ostracon</span>
+      </div>
+      <div className={styles.items}>
+        {top.map((route) => (
+          <RouteItem key={route.path} route={route} />
+        ))}
+      </div>
+      <SidebarCollections />
+      <div className={styles.items}>
+        {bottom.map((route) => (
+          <RouteItem key={route.path} route={route} />
+        ))}
+      </div>
+      <div className={styles.footer}>
+        <ActionIcon
+          className={styles.toggle}
+          color="gray"
+          onClick={() => {
+            setCollapsed(!collapsed);
+          }}
+          aria-label={toggleLabel}
+          aria-pressed={collapsed}
+          title={toggleLabel}
+        >
+          <ToggleIcon size={16} stroke={1.75} />
+        </ActionIcon>
+      </div>
+    </nav>
+  );
+}

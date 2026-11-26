@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!--
+    Ostracon app icon: the source of truth for every icon size and format.
+    A fired-clay shard (an ostrakon) with lines of writing scratched into it.
+    Full-bleed square (no rounded corners): platforms that mask icons (iOS, Android) need it
+    this way. Run `pnpm gen:icons` after editing to regenerate public/ icons.
+  -->
+  <rect width="512" height="512" fill="#1f2933" />
+  <!-- The shard's broken edge (its thickness), offset below the face -->
+  <path
+    d="M150 132 L312 104 L404 176 L388 318 L300 410 L170 392 L108 286 L122 196 Z"
+    transform="translate(0 22)"
+    fill="#7a3519"
+  />
+  <!-- The face -->
+  <path
+    d="M150 132 L312 104 L404 176 L388 318 L300 410 L170 392 L108 286 L122 196 Z"
+    fill="#c4643a"
+  />
+  <!-- A lighter patch of worn glaze -->
+  <path d="M170 150 L300 128 L372 186 L232 200 Z" fill="#d97d50" opacity="0.7" />
+  <!-- Incised lines of writing -->
+  <g fill="none" stroke="#5e2812" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M170 236 L206 236 M226 236 L262 220 L262 252 M284 236 L340 236" />
+    <path d="M160 290 L230 290 M252 274 L252 306 M276 290 L350 290" />
+    <path d="M196 344 L292 344" />
+  </g>
+</svg>

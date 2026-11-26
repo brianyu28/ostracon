@@ -1,0 +1,22 @@
+@use '@/styles/tokens' as *;
+
+.toast {
+  position: fixed;
+  right: calc(#{$space-4} + var(--os-safe-right));
+  bottom: calc(#{$space-4} + var(--os-safe-bottom));
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-2 $space-2 $space-3;
+  background: var(--os-surface);
+  border: 1px solid var(--os-border);
+  border-radius: $radius-md;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+
+  @include phone {
+    left: calc(#{$space-3} + var(--os-safe-left));
+    right: calc(#{$space-3} + var(--os-safe-right));
+    bottom: calc(#{$bottom-nav-height} + var(--os-safe-bottom) + #{$space-2});
+  }
+}

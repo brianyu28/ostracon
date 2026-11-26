@@ -1,0 +1,7 @@
+dist
+dev-dist
+coverage
+local
+pnpm-lock.yaml
+src/domain/schema/fixtures
+*.ostracon.json

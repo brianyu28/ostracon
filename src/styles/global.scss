@@ -1,0 +1,108 @@
+// Global styles: semantic color variables and base element styles.
+// Component styles live in co-located *.module.scss files.
+
+:root {
+  --os-row-height: 26px;
+  --os-font: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --os-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  // Device safe areas (notch, Dynamic Island, rounded corners, home indicator, and the
+  // side status-bar column on iPhone Duo's outer screen and in landscape). Non-zero
+  // only with viewport-fit=cover (index.html). Use these rather than env() directly.
+  --os-safe-top: env(safe-area-inset-top, 0px);
+  --os-safe-right: env(safe-area-inset-right, 0px);
+  --os-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --os-safe-left: env(safe-area-inset-left, 0px);
+  // env() reports nothing for the rounded screen corners when the top inset is 0 (phones
+  // and iPhone Duo in landscape). A bottom inset means a home-indicator device, which has
+  // rounded corners, so content tucked into a top corner keeps this much extra clearance.
+  --os-corner-clearance: min(var(--os-safe-bottom), 12px);
+
+  --os-bg: #ffffff;
+  --os-surface: #f7f8fa;
+  --os-surface-hover: #eef0f3;
+  --os-surface-active: #f9ebe4;
+  --os-border: #e3e6ea;
+  --os-text: #1f2933;
+  --os-text-dim: #616e7c;
+  --os-text-faint: #9aa5b1;
+  --os-accent: #a8492a;
+  --os-positive: #1a7f4b;
+  --os-negative: #c4302b;
+  --os-warning: #b7791f;
+  // Chart tokens (validated with the dataviz palette checks for each mode).
+  --os-chart-1: #a8492a;
+  --os-chart-grid: #eceef1;
+  // Categorical series, in validated order (dataviz reference palette).
+  --os-series-1: #2a78d6;
+  --os-series-2: #eb6834;
+  --os-series-3: #1baf7a;
+  --os-series-4: #eda100;
+  --os-series-5: #e87ba4;
+  --os-series-6: #008300;
+  --os-series-7: #6250d6;
+  --os-series-8: #e34948;
+  --os-series-other: #a3aab3;
+}
+
+:root[data-density='comfortable'] {
+  --os-row-height: 34px;
+}
+
+:root[data-mantine-color-scheme='dark'] {
+  --os-bg: #15181c;
+  --os-surface: #1c2025;
+  --os-surface-hover: #252a31;
+  --os-surface-active: #3b2a22;
+  --os-border: #2c323a;
+  --os-text: #e4e7eb;
+  --os-text-dim: #9aa5b1;
+  --os-text-faint: #616e7c;
+  --os-accent: #ec9a72;
+  --os-positive: #4cc38a;
+  --os-negative: #ff6b63;
+  --os-warning: #f0b429;
+  --os-chart-1: #ec9a72;
+  --os-chart-grid: #262b32;
+  --os-series-1: #3987e5;
+  --os-series-2: #d95926;
+  --os-series-3: #199e70;
+  --os-series-4: #c98500;
+  --os-series-5: #d55181;
+  --os-series-6: #0ca30c;
+  --os-series-7: #9085e9;
+  --os-series-8: #e66767;
+  --os-series-other: #5c6570;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--os-bg);
+  color: var(--os-text);
+  font-family: var(--os-font);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Keep dialogs clear of the safe areas (Mantine's own offsets only cover the viewport edge).
+.mantine-Modal-inner {
+  padding-top: calc(var(--modal-inner-y-offset, var(--modal-y-offset)) + var(--os-safe-top));
+  padding-bottom: calc(var(--modal-inner-y-offset, var(--modal-y-offset)) + var(--os-safe-bottom));
+  padding-left: calc(var(--modal-inner-x-offset, var(--modal-x-offset)) + var(--os-safe-left));
+  padding-right: calc(var(--modal-inner-x-offset, var(--modal-x-offset)) + var(--os-safe-right));
+}
+
+.mantine-Modal-content {
+  max-height: var(
+    --modal-content-max-height,
+    calc(100dvh - var(--modal-y-offset) * 2 - var(--os-safe-top) - var(--os-safe-bottom))
+  );
+}

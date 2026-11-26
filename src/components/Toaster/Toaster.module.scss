@@ -1,0 +1,62 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  position: fixed;
+  // Centered between the side safe areas.
+  left: calc(50% + (var(--os-safe-left) - var(--os-safe-right)) / 2);
+  bottom: calc(#{$space-4} + var(--os-safe-bottom));
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  transform: translateX(-50%);
+  pointer-events: none;
+
+  @include phone {
+    bottom: calc(#{$bottom-nav-height} + var(--os-safe-bottom) + #{$space-2});
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-1 $space-1 $space-1 $space-3;
+  min-height: 32px;
+  border-radius: $radius-md;
+  background: var(--os-text);
+  color: var(--os-bg);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+  pointer-events: auto;
+
+  button[class*='CloseButton'] {
+    color: inherit;
+  }
+}
+
+.error {
+  background: var(--os-negative);
+  color: #fff;
+}
+
+.message {
+  font-size: $font-sm;
+}
+
+.action {
+  padding: 2px $space-2;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--os-accent);
+  font: inherit;
+  font-size: $font-sm;
+  font-weight: 600;
+  cursor: pointer;
+
+  .error & {
+    color: #fff;
+    text-decoration: underline;
+  }
+}

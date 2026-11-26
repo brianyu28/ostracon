@@ -1,0 +1,132 @@
+@use '@/styles/tokens' as *;
+
+// The icon-rail look is shared by tablet widths and the user-collapsed desktop state.
+@mixin rail {
+  @include tablet {
+    @content;
+  }
+
+  &[data-collapsed] {
+    @content;
+  }
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  width: $sidebar-width;
+  flex: none;
+  background: var(--os-surface);
+  border-right: 1px solid var(--os-border);
+  transition: width 120ms ease;
+
+  @include rail {
+    width: $sidebar-collapsed-width;
+
+    .brand {
+      justify-content: center;
+      padding: var(--brand-top) 0 0;
+
+      // macOS window controls sit where the rail's logo is: push it out of view.
+      @include titlebar-overlay {
+        padding-left: env(titlebar-area-x, 0px);
+        overflow: hidden;
+      }
+    }
+
+    .name,
+    .sectionLabel {
+      display: none;
+    }
+
+    .items {
+      padding: $space-1;
+    }
+
+    .footer {
+      justify-content: center;
+      padding: $space-2 0 calc(#{$space-2} + var(--os-safe-bottom));
+    }
+  }
+
+  @include phone {
+    display: none;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  // The logo sits in the screen's top-left corner: keep it clear of the status bar and,
+  // when there's no top inset (landscape), of the rounded corner.
+  --brand-top: max(var(--os-safe-top), var(--os-corner-clearance));
+
+  height: calc(#{$topbar-height} + var(--brand-top));
+  padding: 0 $space-3;
+  padding-top: var(--brand-top);
+
+  // Part of the window's title bar: drag to move, starting after the macOS controls.
+  @include titlebar-overlay {
+    @include window-drag-region;
+
+    height: max(#{$topbar-height}, env(titlebar-area-height, 0px));
+    padding-left: max(#{$space-3}, calc(env(titlebar-area-x, 0px) + #{$space-1}));
+  }
+}
+
+.logo {
+  width: 18px;
+  height: 18px;
+}
+
+.name {
+  font-weight: 600;
+  font-size: $font-lg;
+  letter-spacing: -0.01em;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: $space-1 $space-2;
+}
+
+.collections {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border-top: 1px solid var(--os-border);
+  margin-top: $space-1;
+  padding-top: $space-1;
+}
+
+.sectionLabel {
+  padding: $space-1 $space-4 2px;
+  font-size: $font-xs;
+  font-weight: 600;
+  color: var(--os-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.footer {
+  display: flex;
+  margin-top: auto;
+  padding: $space-2;
+  padding-bottom: calc(#{$space-2} + var(--os-safe-bottom));
+
+  // Tablet is always a rail, so the toggle only matters on desktop.
+  @include tablet {
+    display: none;
+  }
+}
+
+.toggle {
+  color: var(--os-text-faint);
+
+  &:hover {
+    color: var(--os-text);
+  }
+}
