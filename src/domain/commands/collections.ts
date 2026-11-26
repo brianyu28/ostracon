@@ -1,7 +1,10 @@
-import type { Collection, Field, Id, View } from '../schema/types';
+import { original } from 'immer';
+import { iterateRecords, removeRecord, type DocModel } from '../model';
+import type { Collection, Color, Field, Id, View } from '../schema/types';
 import { applyChanges, CommandError, defineCommand, required, tombstone } from './define';
+import { deleteFields } from './helpers';
 
-export const createCollection = defineCommand<{ name: string; icon?: string; color?: string }, Id>({
+export const createCollection = defineCommand<{ name: string; icon?: string; color?: Color }, Id>({
   label: 'Add collection',
   run(draft, { name, icon, color }, { now, newId }) {
     if (!name.trim()) throw new CommandError('Collection name is required.');
@@ -13,6 +16,7 @@ export const createCollection = defineCommand<{ name: string; icon?: string; col
       name: 'Name',
       order: 0,
       type: 'text',
+      config: {},
       createdAt: now,
       updatedAt: now,
     };
@@ -79,34 +83,39 @@ export const reorderCollections = defineCommand<{ ids: readonly Id[] }>({
   },
 });
 
-/** Deletes a collection with its fields, views, records and links. */
+/**
+ * Deletes a collection with its fields, views, records and links, and the link fields in other
+ * collections that point at it.
+ */
 export const deleteCollection = defineCommand<{ id: Id }>({
   label: 'Delete collection',
   run(draft, { id }, { now }) {
     required(draft.collections[id], 'Collection');
-    const fieldIds = new Set<Id>();
-    for (const f of Object.values(draft.fields)) {
-      if (f.collectionId !== id) continue;
-      fieldIds.add(f.id);
+    const base: DocModel = original(draft);
+    // Link fields first, from either side, so their pairs and links go with them.
+    const linkFields = Object.values(base.fields).filter(
+      (f) => f.type === 'link' && (f.collectionId === id || f.config.targetCollectionId === id),
+    );
+    deleteFields(
+      draft,
+      linkFields.map((f) => f.id),
+      now,
+    );
+    for (const f of Object.values(base.fields)) {
+      if (f.collectionId !== id || f.type === 'link') continue;
       Reflect.deleteProperty(draft.fields, f.id);
       tombstone(draft, f.id, now);
     }
-    for (const v of Object.values(draft.views)) {
+    for (const v of Object.values(base.views)) {
       if (v.collectionId !== id) continue;
       Reflect.deleteProperty(draft.views, v.id);
       tombstone(draft, v.id, now);
     }
-    for (const bucket of Object.values(draft.records[id] ?? {})) {
-      for (const recordId of Object.keys(bucket)) tombstone(draft, recordId, now);
+    for (const record of iterateRecords(base, id)) {
+      removeRecord(draft, id, record.id);
+      tombstone(draft, record.id, now);
     }
     Reflect.deleteProperty(draft.records, id);
-    // Links on this collection's fields. (Inbound link fields from other collections are
-    // removed with their pair once link fields exist, in Phase 5.)
-    for (const [key, link] of Object.entries(draft.links)) {
-      if (!fieldIds.has(link[0])) continue;
-      Reflect.deleteProperty(draft.links, key);
-      tombstone(draft, key, now);
-    }
     Reflect.deleteProperty(draft.collections, id);
     tombstone(draft, id, now);
   },

@@ -84,6 +84,52 @@ export function linkKey(link: Pick<Link, 0 | 1 | 2>): string {
   return `${link[0]}|${link[1]}|${link[2]}`;
 }
 
+/**
+ * Links are bucketed like records, by the first random character of their `from` record id,
+ * so adding or removing one copies ~1/62 of the links instead of all of them. Access them
+ * through the helpers below.
+ */
+export type LinkBuckets = Record<string, Record<string, Link>>;
+
+/** The bucket of a link key ("fld_…|rec_X…|rec_…" → "X"). */
+export function linkBucket(key: string): string {
+  return key.charAt(key.indexOf('|') + 1 + BUCKET_CHAR);
+}
+
+export function getLink(doc: Pick<DocModel, 'links'>, key: string): Link | undefined {
+  return doc.links[linkBucket(key)]?.[key];
+}
+
+export function hasLink(doc: Pick<DocModel, 'links'>, key: string): boolean {
+  const bucket = doc.links[linkBucket(key)];
+  return bucket !== undefined && key in bucket;
+}
+
+/** Inserts or replaces a link (works on Immer drafts). Returns its key. */
+export function putLink(doc: Pick<DocModel, 'links'>, link: Link): string {
+  const key = linkKey(link);
+  (doc.links[linkBucket(key)] ??= {})[key] = link;
+  return key;
+}
+
+/** Removes a link (works on Immer drafts). Returns whether it existed. */
+export function removeLink(doc: Pick<DocModel, 'links'>, key: string): boolean {
+  const bucket = doc.links[linkBucket(key)];
+  if (!bucket || !(key in bucket)) return false;
+  Reflect.deleteProperty(bucket, key);
+  return true;
+}
+
+export function* iterateLinks(doc: Pick<DocModel, 'links'>): Generator<[string, Link]> {
+  for (const bucket of Object.values(doc.links)) yield* Object.entries(bucket);
+}
+
+export function countLinks(doc: Pick<DocModel, 'links'>): number {
+  let n = 0;
+  for (const bucket of Object.values(doc.links)) n += Object.keys(bucket).length;
+  return n;
+}
+
 export interface DocModel {
   meta: FileMeta;
   settings: FileSettings;
@@ -91,8 +137,8 @@ export interface DocModel {
   fields: EntityMap<Field>;
   views: EntityMap<View>;
   records: RecordStore;
-  /** Keyed by `linkKey`. */
-  links: Record<string, Link>;
+  /** Bucketed, then keyed by `linkKey` (see `LinkBuckets`). */
+  links: LinkBuckets;
   tombstones: Tombstone[];
 }
 
@@ -113,8 +159,8 @@ const byCollectionOrder = (
 export function fileToModel(file: OstraconFile): DocModel {
   const records: RecordStore = {};
   for (const r of file.records) putRecord({ records }, r);
-  const links: DocModel['links'] = {};
-  for (const l of file.links) links[linkKey(l)] = l;
+  const links: LinkBuckets = {};
+  for (const l of file.links) putLink({ links }, l);
   return {
     meta: file.meta,
     settings: file.settings,
@@ -141,9 +187,7 @@ export function modelToFile(model: DocModel): OstraconFile {
     records: [...iterateRecords(model)].sort(
       (a, b) => compareText(a.collectionId, b.collectionId) || byId(a, b),
     ),
-    links: Object.entries(model.links)
-      .sort(([a], [b]) => compareText(a, b))
-      .map(([, l]) => l),
+    links: [...iterateLinks(model)].sort(([a], [b]) => compareText(a, b)).map(([, l]) => l),
     tombstones: [...model.tombstones].sort(byId),
   };
 }

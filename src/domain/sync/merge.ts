@@ -11,8 +11,19 @@
  * Without a base (first sync between devices), records present on one side are kept,
  * unless the other side's tombstone shows a deletion newer than the record's last edit.
  */
-import { iterateRecords, putRecord, type DocModel, type EntityMap } from '../model';
+import {
+  iterateLinks,
+  iterateRecords,
+  putLink,
+  putRecord,
+  removeLink,
+  type DocModel,
+  type EntityMap,
+} from '../model';
+import { INVALID } from '../fields/model';
+import { fieldType } from '../fields/registry';
 import type { Collection, Field, Id, RecordEntity } from '../schema/types';
+import { repairView } from '../views/repair';
 
 export interface MergeConflict {
   collection: string;
@@ -136,11 +147,15 @@ function flattenRecords(doc: Pick<DocModel, 'records'>): EntityMap<RecordEntity>
  * either side is kept unless the other side deleted it after it was created.
  */
 function mergeLinks(
-  base: DocModel['links'] | undefined,
-  local: DocModel['links'],
-  remote: DocModel['links'],
+  baseBuckets: DocModel['links'] | undefined,
+  localBuckets: DocModel['links'],
+  remoteBuckets: DocModel['links'],
   ctx: Context,
 ): DocModel['links'] {
+  const flat = (links: DocModel['links']) => Object.fromEntries(iterateLinks({ links }));
+  const base = baseBuckets && flat(baseBuckets);
+  const local = flat(localBuckets);
+  const remote = flat(remoteBuckets);
   const out: DocModel['links'] = {};
   const keys = new Set([...Object.keys(local), ...Object.keys(remote), ...Object.keys(base ?? {})]);
   for (const key of keys) {
@@ -157,7 +172,7 @@ function mergeLinks(
       keep = present !== undefined && !(!(l && r) && deleted && deleted > present[3]);
     }
     const pick = keep ? (l ?? r) : undefined;
-    if (pick) out[key] = pick;
+    if (pick) putLink({ links: out }, pick);
     if ((pick !== undefined) !== (l !== undefined)) ctx.fromRemote++;
   }
   return out;
@@ -247,33 +262,41 @@ function repairReferences(doc: DocModel): void {
   for (const f of Object.values(doc.fields)) {
     if (!doc.collections[f.collectionId]) Reflect.deleteProperty(doc.fields, f.id);
   }
+  // A link field whose pair or target is gone (e.g. edited here, deleted there) can't work.
+  for (const f of Object.values(doc.fields)) {
+    if (f.type !== 'link') continue;
+    const inverse = doc.fields[f.config.inverseFieldId];
+    if (inverse?.type !== 'link' || !doc.collections[f.config.targetCollectionId])
+      Reflect.deleteProperty(doc.fields, f.id);
+  }
   for (const v of Object.values(doc.views)) {
-    if (!doc.collections[v.collectionId]) {
-      Reflect.deleteProperty(doc.views, v.id);
-      continue;
-    }
-    if (v.fields.some((f) => doc.fields[f.fieldId]?.collectionId !== v.collectionId)) {
-      doc.views[v.id] = {
-        ...v,
-        fields: v.fields.filter((f) => doc.fields[f.fieldId]?.collectionId === v.collectionId),
-      };
+    if (!doc.collections[v.collectionId]) Reflect.deleteProperty(doc.views, v.id);
+    else {
+      const repaired = repairView(v, doc.fields);
+      if (repaired !== v) doc.views[v.id] = repaired;
     }
   }
   for (const collectionId of Object.keys(doc.records)) {
     if (!doc.collections[collectionId]) Reflect.deleteProperty(doc.records, collectionId);
   }
+  // Values for fields that are gone or no longer fit (e.g. an option deleted on the other side).
   for (const r of iterateRecords(doc)) {
-    const stale = Object.keys(r.values).filter(
-      (id) => doc.fields[id]?.collectionId !== r.collectionId,
-    );
-    if (stale.length === 0) continue;
-    const values = { ...r.values };
-    for (const id of stale) Reflect.deleteProperty(values, id);
-    putRecord(doc, { ...r, values });
+    let values: RecordEntity['values'] | null = null;
+    for (const [id, value] of Object.entries(r.values)) {
+      const field = doc.fields[id];
+      if (field?.collectionId === r.collectionId && fieldType(field).isValid(value, field))
+        continue;
+      values ??= { ...r.values };
+      const normalized =
+        field?.collectionId === r.collectionId ? fieldType(field).normalize(value, field) : INVALID;
+      if (normalized === INVALID || normalized === undefined) Reflect.deleteProperty(values, id);
+      else values[id] = normalized;
+    }
+    if (values) putRecord(doc, { ...r, values });
   }
   const recordIds = new Set([...iterateRecords(doc)].map((r) => r.id));
-  for (const [key, [fieldId, fromId, toId]] of Object.entries(doc.links)) {
+  for (const [key, [fieldId, fromId, toId]] of [...iterateLinks(doc)]) {
     if (!doc.fields[fieldId] || !recordIds.has(fromId) || !recordIds.has(toId))
-      Reflect.deleteProperty(doc.links, key);
+      removeLink(doc, key);
   }
 }

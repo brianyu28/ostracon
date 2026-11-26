@@ -5,17 +5,59 @@ import {
   reorderCollections,
   updateCollection,
 } from './collections';
-import { createRecord, deleteRecords, setRecordValues } from './records';
+import {
+  changeFieldType,
+  createField,
+  createLinkField,
+  deleteField,
+  reorderFields,
+  setPrimaryField,
+  updateField,
+} from './fields';
+import { addLinks, removeLinks, setLinks } from './links';
+import {
+  createRecord,
+  deleteRecords,
+  duplicateRecords,
+  setFieldValue,
+  setRecordValues,
+} from './records';
 import { updateSettings } from './settings';
+import {
+  createView,
+  deleteView,
+  duplicateView,
+  reorderViews,
+  setViewFields,
+  updateView,
+} from './views';
 
 export const commands = {
   createCollection,
   updateCollection,
   reorderCollections,
   deleteCollection,
+  createField,
+  createLinkField,
+  updateField,
+  changeFieldType,
+  reorderFields,
+  deleteField,
+  setPrimaryField,
+  createView,
+  duplicateView,
+  updateView,
+  setViewFields,
+  reorderViews,
+  deleteView,
   createRecord,
   setRecordValues,
+  setFieldValue,
+  duplicateRecords,
   deleteRecords,
+  setLinks,
+  addLinks,
+  removeLinks,
   updateSettings,
 };
 
@@ -26,3 +68,6 @@ export type CommandResult<K extends CommandName> = ReturnType<Commands[K]['run']
 
 export { CommandError, type CommandContext } from './define';
 export type { CollectionChanges } from './collections';
+export type { FieldChanges, NewField, NewLinkField } from './fields';
+export type { NewRecord } from './records';
+export type { ViewChanges } from './views';

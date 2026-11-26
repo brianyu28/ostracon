@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { serializeModel } from '@/persistence/codec/serialize';
 import { generateDemoDocument } from '../demo/generate';
-import { countRecords } from '../model';
+import { countLinks, countRecords } from '../model';
 import { parseDocument } from './document';
 import { runMigrations, MigrationError, type Migration } from './migrations';
 import { createEmptyDocument } from './defaults';
@@ -99,6 +99,70 @@ describe('parseDocument', () => {
   });
 });
 
+describe('integrity checks', () => {
+  type RawFile = {
+    fields: { id: string; name: string; type: string; config?: Record<string, unknown> }[];
+    records: { collectionId: string; values: Record<string, unknown> }[];
+    links: [string, string, string, string][];
+    views: { fields: { fieldId: string }[] }[];
+  };
+  const load = (edit: (file: RawFile) => void) => {
+    const file = JSON.parse(fixture(CURRENT_SCHEMA_VERSION)) as RawFile;
+    edit(file);
+    const result = parseDocument(JSON.stringify(file));
+    if (!result.ok) throw new Error(JSON.stringify(result.error));
+    return result.integrityIssues.map((i) => i.message);
+  };
+
+  it('reports values that do not fit their field', () => {
+    const issues = load((file) => {
+      const rating = file.fields.find((f) => f.type === 'rating')!;
+      const record = file.records.find((r) => rating.id in r.values)!;
+      record.values[rating.id] = 99;
+    });
+    expect(issues).toEqual([expect.stringMatching(/^Invalid value for Rating/)]);
+  });
+
+  it('reports broken link pairs and links to missing records', () => {
+    expect(
+      load((file) => {
+        const link = file.fields.find((f) => f.type === 'link' && f.name === 'Owner')!;
+        link.config!.inverseFieldId = link.id;
+      }),
+    ).toContain('Link field is not paired correctly');
+    expect(
+      load((file) => {
+        file.links[0]![2] = 'rec_missing00000';
+      }),
+    ).toContain('Link points at a missing record');
+  });
+
+  it('reports single-valued links with more than one record', () => {
+    const issues = load((file) => {
+      const restaurant = file.fields.find((f) => f.name === 'Restaurant')!;
+      const canonical =
+        restaurant.id < (restaurant.config!.inverseFieldId as string)
+          ? restaurant.id
+          : (restaurant.config!.inverseFieldId as string);
+      const visitLinks = file.links.filter((l) => l[0] === canonical);
+      const [a, b] = visitLinks;
+      // Give the first visit a second restaurant (the visit is on the canonical side or not).
+      const restaurantIsFrom = canonical === restaurant.id;
+      file.links.push(
+        restaurantIsFrom ? [canonical, a![1], b![2], a![3]] : [canonical, b![1], a![2], a![3]],
+      );
+    });
+    expect(issues.some((m) => m.includes('links to more than one record'))).toBe(true);
+  });
+
+  it('reports views that refer to fields of another collection', () => {
+    const issues = load((file) => {
+      file.views[0]!.fields.push({ fieldId: file.fields.at(-1)!.id });
+    });
+    expect(issues).toContain('View refers to fields it can’t use');
+  });
+});
+
 describe('runMigrations', () => {
   const v0to1: Migration = {
     from: 0,
@@ -139,6 +203,8 @@ describe('generateDemoDocument', () => {
     const result = parseDocument(a);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.integrityIssues).toEqual([]);
-    expect(countRecords(result.model)).toBe(90);
+    // 30 people, 30 restaurants, 90 visits, 30 books, 8 trips, 15 devices.
+    expect(countRecords(result.model)).toBe(203);
+    expect(countLinks(result.model)).toBeGreaterThan(100);
   });
 });

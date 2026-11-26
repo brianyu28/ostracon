@@ -63,21 +63,25 @@ Other single sources of truth:
   enforces this). Logic goes here so it is testable and reusable from Web Workers.
 - **Dates are `YYYY-MM-DD` strings** (`ISODate`), compared lexically. No time zones, no `Date`
   math on calendar dates.
-- **Record values are keyed by field id**, never by field name. Links between records live in
-  the document's `links` table, never on records.
+- **Record values are keyed by field id**, never by field name, and every value goes through
+  its field type's definition (`src/domain/fields/`): `normalize` on input, `format` for text.
+  Links between records live in the document's `links` table, never on records.
 - **UI mutates data only through named store commands** (they power undo/redo).
-- **Schema changes need a migration** once v1 is frozen: bump the schema version, add a
-  single-step migration and a fixture, and keep older fixtures migrating cleanly (see
+- **Schema changes**: until the first web deployment, v1 is edited in place (no migration;
+  regenerate `fixtures/v1.json` with `pnpm gen:demo`). After deployment they need a migration:
+  bump the schema version, add a single-step migration and a fixture, and keep older fixtures migrating cleanly (see
   `src/domain/schema/migrations/index.ts`). The only schema module is
   `src/domain/schema/current.ts`; old versions exist as fixtures. Fixtures are generated with
   `pnpm gen:demo` and must not be hand-formatted.
-- **Access records through the helpers in `src/domain/model.ts`** (`getRecord`, `putRecord`,
-  `removeRecord`, `iterateRecords`). They are stored per collection in buckets so an edit
-  doesn't copy the whole collection.
+- **Access records and links through the helpers in `src/domain/model.ts`** (`getRecord`,
+  `putRecord`, `removeRecord`, `iterateRecords`; `getLink`, `putLink`, `removeLink`,
+  `iterateLinks`). Both are stored in buckets so an edit doesn't copy everything. In commands,
+  read links with `linksOf(…, ctx.links)`, never by scanning.
 - **Heavy work runs in the I/O worker** (`src/workers/io.worker.ts`): parsing, migration,
   validation and serialization. Keep zod and the codec out of the main bundle.
 - **Performance matters**: assume 50k records in a file and 10k in one collection. Virtualize
-  long lists and keep derived data incremental or memoized.
+  long lists and keep derived data incremental or memoized. Run `pnpm bench` when touching
+  commands, the index or per-record code.
 - **Styling**: SCSS modules co-located with components (`Foo.tsx` + `Foo.module.scss`), one
   component per file. `@use '@/styles/tokens' as *;` for sizes/breakpoints; colors via
   `var(--os-*)`. No Tailwind or CSS-in-JS. Mantine for complex controls, themed compact

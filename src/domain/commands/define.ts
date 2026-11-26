@@ -5,6 +5,7 @@
  */
 import type { Draft } from 'immer';
 import type { IdKind } from '@/lib/id';
+import type { LinkReader } from '../links';
 import type { DocModel } from '../model';
 import type { Id } from '../schema/types';
 
@@ -12,6 +13,11 @@ export interface CommandContext {
   /** ISO timestamp for `updatedAt` / `createdAt` / tombstones. */
   now: string;
   newId: (kind: IdKind) => Id;
+  /**
+   * Fast link reads (the index before the command plus the links it added). The store always
+   * provides it; without it, link reads scan every link.
+   */
+  links?: LinkReader;
 }
 
 export interface CommandDef<P, R> {

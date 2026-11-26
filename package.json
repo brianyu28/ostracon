@@ -21,7 +21,8 @@
     "test:watch": "vitest",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build",
     "gen:icons": "tsx scripts/gen-icons.ts",
-    "gen:demo": "tsx --tsconfig tsconfig.app.json scripts/gen-demo.ts"
+    "gen:demo": "tsx --tsconfig tsconfig.app.json scripts/gen-demo.ts",
+    "bench": "tsx --tsconfig tsconfig.app.json bench/run.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

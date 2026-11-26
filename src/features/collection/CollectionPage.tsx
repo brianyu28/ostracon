@@ -4,28 +4,51 @@ import { useMemo, useState } from 'react';
 import { Redirect, useParams } from 'wouter';
 import { InlineEdit } from '@/components/InlineEdit/InlineEdit';
 import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
-import { iterateRecords } from '@/domain/model';
-import type { Field } from '@/domain/schema/types';
+import type { DocIndex } from '@/domain/aggregates/docIndex';
+import type { FormatContext } from '@/domain/fields/model';
+import { getRecord, iterateRecords, type DocModel } from '@/domain/model';
+import { recordTitle, valueText } from '@/domain/records';
+import type { Field, RecordEntity } from '@/domain/schema/types';
+import { useFormatContext } from '@/hooks/useFormatContext';
 import { pluralize } from '@/lib/format';
 import { toastWithUndo, tryDispatch } from '@/store/actions';
 import { useDocStore } from '@/store/docStore';
 import styles from './CollectionPage.module.scss';
 
-/** Placeholder formatting until each field type formats its own values (Phase 1). */
-function displayValue(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  return value === undefined || value === null ? '' : JSON.stringify(value);
+/** A cell's text: stored values through their type, links as titles, timestamps as dates. */
+function cellText(
+  doc: DocModel,
+  index: DocIndex | null,
+  record: RecordEntity,
+  field: Field,
+  ctx: FormatContext,
+): string {
+  if (field.type === 'link') {
+    const target = field.config.targetCollectionId;
+    return (index?.linked(field, record.id) ?? [])
+      .map((id) => getRecord(doc, target, id))
+      .filter((r) => r !== undefined)
+      .map((r) => recordTitle(doc, r))
+      .join(', ');
+  }
+  if (field.type === 'createdTime' || field.type === 'modifiedTime') {
+    const iso = field.type === 'createdTime' ? record.createdAt : record.updatedAt;
+    return new Date(iso).toLocaleDateString(ctx.locale, { dateStyle: 'medium' });
+  }
+  return valueText(record, field, ctx);
 }
 
 /**
- * A collection and one of its views. Phase 0 placeholder: a plain, read-only list of the
- * view's fields. Phase 3 replaces it with the editable, virtualized grid and Phase 4 adds
+ * A collection and one of its views. Placeholder: a plain, read-only list of the view's
+ * visible fields, formatted by their types. Phase 3 replaces it with the editable, virtualized grid and Phase 4 adds
  * view tabs, filters and sorting.
  */
 export function CollectionPage() {
   const { collectionId = '', viewId } = useParams<{ collectionId?: string; viewId?: string }>();
   const doc = useDocStore((s) => s.doc);
+  const index = useDocStore((s) => s.index);
+  useDocStore((s) => s.indexVersion); // links change with the index
+  const format = useFormatContext();
   const collection = doc?.collections[collectionId];
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -120,7 +143,7 @@ export function CollectionPage() {
             {records.map((r) => (
               <tr key={r.id}>
                 {columns.map((f) => {
-                  return <td key={f.id}>{displayValue(r.values[f.id])}</td>;
+                  return <td key={f.id}>{cellText(doc, index, r, f, format)}</td>;
                 })}
               </tr>
             ))}

@@ -20,9 +20,10 @@ import {
   commands,
   type CommandName,
   type CommandPayload,
+  type CommandContext,
   type CommandResult,
 } from '@/domain/commands';
-import { getRecord, type DocModel } from '@/domain/model';
+import { getLink, getRecord, type DocModel } from '@/domain/model';
 import type { Id } from '@/domain/schema/types';
 import { newId } from '@/lib/id';
 
@@ -116,6 +117,27 @@ function touchedRecords(patches: readonly Patch[], prev: DocModel, next: DocMode
   return [...refs.values()];
 }
 
+/**
+ * Keys of links touched by a set of patches (paths look like ['links', bucket, key]); whole
+ * buckets that were added, removed or replaced contribute every link they held on either side.
+ */
+function touchedLinks(patches: readonly Patch[], prev: DocModel, next: DocModel): Set<string> {
+  const keys = new Set<string>();
+  const addBucket = (bucket?: string) => {
+    for (const doc of [prev, next]) {
+      const list = bucket === undefined ? Object.values(doc.links) : [doc.links[bucket] ?? {}];
+      for (const b of list) for (const key of Object.keys(b)) keys.add(key);
+    }
+  };
+  for (const p of patches) {
+    if (p.path[0] !== 'links') continue;
+    if (p.path.length < 2) addBucket();
+    else if (p.path.length === 2) addBucket(String(p.path[1]));
+    else keys.add(String(p.path[2]));
+  }
+  return keys;
+}
+
 export function createDocStore() {
   let past: HistoryEntry[] = [];
   let future: HistoryEntry[] = [];
@@ -128,12 +150,15 @@ export function createDocStore() {
     const commit = (next: DocModel, patches: readonly Patch[], history: Partial<DocState> = {}) => {
       const { doc: prev, index } = get();
       if (!prev || !index) return;
+      if (prev.fields !== next.fields) index.syncFields(next.fields);
       const touched = touchedRecords(patches, prev, next);
       for (const [collectionId, id] of touched)
         index.update(getRecord(prev, collectionId, id), getRecord(next, collectionId, id));
+      const links = touchedLinks(patches, prev, next);
+      for (const key of links) index.updateLink(getLink(prev, key), getLink(next, key));
       set((s) => ({
         doc: next,
-        indexVersion: touched.length > 0 ? s.indexVersion + 1 : s.indexVersion,
+        indexVersion: touched.length > 0 || links.size > 0 ? s.indexVersion + 1 : s.indexVersion,
         editSeq: s.editSeq + 1,
         contentId: past.at(-1)?.contentId ?? rootContentId,
         undoLabel: past.at(-1)?.label ?? null,
@@ -172,7 +197,14 @@ export function createDocStore() {
         const doc = get().doc;
         if (!doc) throw new Error('No document is open');
         const command = commands[name];
-        const ctx = { now: new Date().toISOString(), newId };
+        const index = get().index;
+        // The index still describes `doc` (the state before this command): commands read
+        // links from it, plus the links they add (see `linksOf`).
+        const ctx: CommandContext = {
+          now: new Date().toISOString(),
+          newId,
+          ...(index ? { links: { index, added: new Set<string>() } } : {}),
+        };
         let result: unknown;
         const [next, patches, inverse] = produceWithPatches(doc, (draft) => {
           // The run function's payload type is checked at the dispatch call site.

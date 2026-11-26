@@ -1,5 +1,6 @@
 import {
   IconBook,
+  IconCalendar,
   IconDeviceGamepad2,
   IconDevices,
   IconMapPin,
@@ -19,6 +20,7 @@ export const COLLECTION_ICONS: Readonly<Record<string, Icon>> = {
   users: IconUsers,
   'tools-kitchen-2': IconToolsKitchen2,
   book: IconBook,
+  calendar: IconCalendar,
   movie: IconMovie,
   devices: IconDevices,
   'map-pin': IconMapPin,
