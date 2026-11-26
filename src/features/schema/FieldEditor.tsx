@@ -1,4 +1,5 @@
-import { Alert, Button, Checkbox, Group, Modal, Select, Textarea, TextInput } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, Select, Textarea, TextInput } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { IconAlertTriangle, IconTrash } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { FieldTypeIcon } from '@/components/FieldTypeIcon/FieldTypeIcon';

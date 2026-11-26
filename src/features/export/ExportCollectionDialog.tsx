@@ -1,4 +1,5 @@
-import { Button, Checkbox, Group, Modal, Radio, Stack } from '@mantine/core';
+import { Button, Checkbox, Group, Radio, Stack } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { useMemo, useState } from 'react';
 import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
 import { countRecords } from '@/domain/model';

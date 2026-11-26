@@ -1,4 +1,5 @@
-import { Button, Group, Modal, Text } from '@mantine/core';
+import { Button, Group, Text } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import type { ReactNode } from 'react';
 
 interface ConfirmDialogProps {

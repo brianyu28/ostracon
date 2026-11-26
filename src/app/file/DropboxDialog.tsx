@@ -1,4 +1,5 @@
-import { Button, Group, Loader, Modal, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { useEffect, useState } from 'react';
 import { displayFileName, fileExtension, formatRelativeTime } from '@/lib/format';
 import { today } from '@/lib/date';

@@ -73,7 +73,7 @@ export default defineConfig({
       manifest: {
         name: 'Ostracon',
         short_name: 'Ostracon',
-        description: 'Keep records about anything, in a file you own.',
+        description: 'Your personal database, in a file you own.',
         theme_color: '#f7f8fa',
         background_color: '#ffffff',
         // Stable identity for the installed app, independent of start_url.

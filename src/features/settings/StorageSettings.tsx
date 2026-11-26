@@ -1,4 +1,5 @@
-import { Button, Group, Modal, Text } from '@mantine/core';
+import { Button, Group, Text } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { useDisclosure } from '@mantine/hooks';
 import { DROPBOX_NOT_REVOKED } from '@/persistence/adapters/dropbox';
 import { isFsAccessSupported } from '@/persistence/adapters/fsAccess';

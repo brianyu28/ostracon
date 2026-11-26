@@ -1,4 +1,5 @@
-import { Anchor, Modal } from '@mantine/core';
+import { Anchor } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { Link } from 'wouter';
 import { KeyBinding } from '@/components/KeyBinding/KeyBinding';
 import { usePrefs } from '@/store/prefsStore';

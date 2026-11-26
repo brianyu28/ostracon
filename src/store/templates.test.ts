@@ -73,21 +73,21 @@ describe('template catalog', () => {
 describe('planning', () => {
   it('links to an existing People collection, or creates it', () => {
     const restaurants = TEMPLATES_BY_KEY.get('restaurants')!;
-    const created = planTemplate(restaurants, { withLog: true, existing: [] });
-    expect(created.collections.map((c) => c.ref)).toEqual(['main', 'log', 'people']);
+    expect(restaurants.log).toBeUndefined();
+    const created = planTemplate(restaurants, { withLog: false, existing: [] });
+    expect(created.collections.map((c) => c.ref)).toEqual(['main', 'people']);
     store.getState().dispatch('createFromTemplate', { plan: created });
     const people = named('People')!;
     expect(people.template?.key).toBe('people');
-    const visits = named('Restaurant visits')!;
+    const visits = named('Restaurants')!;
     expect(
       fieldsOf(visits.id)
         .sort((a, b) => a.order - b.order)
         .map((f) => f.name),
-    ).toEqual(['Visit', 'Restaurant', 'Date', 'With', 'Ordered', 'Spent', 'Rating', 'Notes']);
+    ).toEqual(['Restaurant', 'Date', 'With', 'Cuisine', 'Location', 'Rating', 'Notes']);
     const withField = fieldsOf(visits.id).find((f) => f.name === 'With');
     expect(withField?.type === 'link' && withField.config.targetCollectionId).toBe(people.id);
     expect(fieldsOf(people.id).map((f) => f.name)).toContain('Meals');
-    expect(fieldsOf(named('Restaurants')!.id).map((f) => f.name)).toContain('Visits');
     expectIntact();
 
     // A second template reuses that People collection.
@@ -103,8 +103,8 @@ describe('planning', () => {
 
   it('skips links and drops collections nothing links to any more', () => {
     const plan = planTemplate(TEMPLATES_BY_KEY.get('trips')!, { withLog: false, existing: [] });
-    const companions = plan.collections[0]!.fields.find((f) => f.key === 'companions')!;
-    companions.link = { ...companions.link!, target: { kind: 'skip' } };
+    const withField = plan.collections[0]!.fields.find((f) => f.key === 'with')!;
+    withField.link = { ...withField.link!, target: { kind: 'skip' } };
     const pruned = pruneTemplates(plan);
     expect(pruned.collections.map((c) => c.ref)).toEqual(['main']);
     store.getState().dispatch('createFromTemplate', { plan: pruned });

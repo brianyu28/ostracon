@@ -1,4 +1,5 @@
-import { Button, Modal, Select, Tabs, Textarea, TextInput } from '@mantine/core';
+import { Button, Select, Tabs, Textarea, TextInput } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
 import { ColorPicker } from '@/components/ColorPicker/ColorPicker';

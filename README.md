@@ -1,7 +1,7 @@
 # Ostracon
 
 A fast, information-dense record-keeping app that runs entirely in your browser. Keep collections
-of records about the things in your life (people, restaurants, books, trips, devices) and view
+of records about the things in your life (people, restaurants, books, trips, recipes) and view
 them in different ways. Your data stays in a JSON file you own. There's no account, no server and
 no tracking.
 

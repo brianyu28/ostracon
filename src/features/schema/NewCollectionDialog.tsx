@@ -1,4 +1,5 @@
-import { ActionIcon, Button, Divider, Group, Modal, TextInput } from '@mantine/core';
+import { ActionIcon, Button, Divider, Group, TextInput } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { IconArrowLeft, IconFileImport } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useLocation } from 'wouter';

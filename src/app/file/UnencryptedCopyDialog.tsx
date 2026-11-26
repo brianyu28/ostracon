@@ -1,4 +1,5 @@
-import { Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { Button, Group, Stack, Text } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { displayFileName } from '@/lib/format';
 import { useSession } from '@/store/sessionStore';
 

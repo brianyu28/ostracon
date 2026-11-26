@@ -37,7 +37,7 @@ export function WelcomeScreen() {
   return (
     <div className={styles.root}>
       <h2 className={styles.title}>Welcome to Ostracon</h2>
-      <p className={styles.lede}>Keep records about anything</p>
+      <p className={styles.lede}>Your personal database</p>
       {loadError && (
         <Alert
           className={styles.error}
@@ -102,8 +102,8 @@ export function WelcomeScreen() {
       </div>
       {!isFsAccessSupported() && (
         <p className={styles.hint}>
-          This browser can’t save directly to files, so saving downloads a new copy. Chrome or Edge
-          on desktop can save back to the same file.
+          This browser can’t save files directly, so saving downloads a new copy. Use desktop Chrome
+          or Edge to edit files.
         </p>
       )}
     </div>

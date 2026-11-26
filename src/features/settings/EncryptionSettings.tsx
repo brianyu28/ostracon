@@ -1,4 +1,5 @@
-import { Alert, Button, Checkbox, Group, Modal, PasswordInput, Stack, Text } from '@mantine/core';
+import { Alert, Button, Checkbox, Group, PasswordInput, Stack, Text } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertTriangle } from '@tabler/icons-react';
 import { useState } from 'react';

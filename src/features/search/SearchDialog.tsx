@@ -1,4 +1,5 @@
-import { Modal, TextInput } from '@mantine/core';
+import { TextInput } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { IconSearch } from '@tabler/icons-react';
 import { clsx } from 'clsx';
 import { useDeferredValue, useMemo, useState, type KeyboardEvent } from 'react';

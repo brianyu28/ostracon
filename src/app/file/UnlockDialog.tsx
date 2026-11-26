@@ -1,4 +1,5 @@
-import { Button, Checkbox, Group, Modal, PasswordInput, Stack, Text } from '@mantine/core';
+import { Button, Checkbox, Group, PasswordInput, Stack, Text } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { useState } from 'react';
 import { displayFileName } from '@/lib/format';
 import { session, useSession } from '@/store/sessionStore';

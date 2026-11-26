@@ -1,4 +1,5 @@
-import { Button, Group, Modal, Text } from '@mantine/core';
+import { Button, Group, Text } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { useState, type ReactNode } from 'react';
 import { docStore, selectIsDirty } from '@/store/docStore';
 import { session } from '@/store/sessionStore';

@@ -1,4 +1,5 @@
-import { Button, Group, Menu, Modal } from '@mantine/core';
+import { Button, Group, Menu } from '@mantine/core';
+import { Modal } from '@/components/Modal/Modal';
 import { IconChevronDown, IconCopy, IconPencil, IconTrash, IconX } from '@tabler/icons-react';
 import { useState } from 'react';
 import { FieldTypeIcon } from '@/components/FieldTypeIcon/FieldTypeIcon';
