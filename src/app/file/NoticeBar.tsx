@@ -11,8 +11,8 @@ import {
 import type { ReactNode } from 'react';
 import { formatRelativeTime, pluralize } from '@/lib/format';
 import { downloadAdapter } from '@/persistence/adapters/download';
-import type { MergeConflict } from '@/domain/sync/merge';
 import { session, useSession, type Notice } from '@/store/sessionStore';
+import { ConflictList } from './ConflictList';
 import styles from './NoticeBar.module.scss';
 
 function render(notice: Notice): {
@@ -68,12 +68,6 @@ function render(notice: Notice): {
         ),
       };
     case 'merged': {
-      const label = (r: MergeConflict['resolution']) =>
-        r === 'kept-local'
-          ? 'kept your edit'
-          : r === 'kept-remote'
-            ? 'kept the other edit'
-            : 'kept the edit over a deletion';
       return {
         color: notice.conflicts.length > 0 ? 'yellow' : 'accent',
         icon: <IconGitMerge size={16} />,
@@ -83,15 +77,9 @@ function render(notice: Notice): {
             'Both sets of edits were combined and saved.'
           ) : (
             <>
-              {pluralize(notice.conflicts.length, 'item')} changed on both sides:
-              <ul className={styles.list}>
-                {notice.conflicts.slice(0, 5).map((c) => (
-                  <li key={`${c.collection}:${c.id}`}>
-                    {c.label}: {label(c.resolution)}
-                  </li>
-                ))}
-                {notice.conflicts.length > 5 && <li>…and {notice.conflicts.length - 5} more</li>}
-              </ul>
+              {pluralize(notice.conflicts.length, 'item')} changed differently on both copies; the
+              newer edit was kept:
+              <ConflictList conflicts={notice.conflicts} />
             </>
           ),
       };

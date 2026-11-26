@@ -23,3 +23,10 @@
 .preLine {
   white-space: pre-line;
 }
+
+.link {
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

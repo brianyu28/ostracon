@@ -400,14 +400,18 @@ storage.
 - The conflict dialog offers **Merge both** (recommended), Keep only mine, Save mine as a copy,
   or Use theirs.
 - **Merging** (`domain/sync/merge.ts`) is a three-way merge of `base`, `local` and `remote`:
-  - Collections, fields, views and records merge per entity, by id. An entity changed on one side
-    only takes that side's version. An entity changed differently on both sides keeps the newer
-    edit and is reported as a conflict. An edit always beats a deletion.
+  - Collections, fields, views and records merge by id. An entity changed on one side only takes
+    that side's version. One changed on both sides merges property by property (`merge3`): a
+    record's values field by field, a select's options by id (additions from both sides kept,
+    renames and recolors combined, option order renumbered). Only a property changed
+    differently on both sides is a conflict: the newer edit wins and it's reported with the
+    field names. An edit always beats a deletion.
   - Links merge as a set: each side's additions and removals apply.
   - Settings merge field by field, and tombstones are unioned.
   - A repair pass then removes references the other side's deletions broke: values for deleted
     fields, view columns for deleted fields, links to deleted records or fields.
-  - The merged document is saved on top of the remote revision, and the user sees a summary.
+  - The merged document is saved on top of the remote revision, and the user sees a summary
+    listing each conflict (records link to their page, with the fields that clashed).
 - On startup, and whenever the app comes back (visible again, focused, restored from the
   back/forward cache, or back online), it checks whether the file changed elsewhere. If there are
   no local edits, it reloads silently. If there are, it offers the merge.

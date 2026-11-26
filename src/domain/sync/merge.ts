@@ -1,13 +1,13 @@
 /**
  * Entity-level merge of two versions of a document that diverged (edited on two devices).
  *
- * With a common base (the version both started from), each record is compared on both
+ * With a common base (the version both started from), each entity is compared on both
  * sides:
  *   - changed on one side only → that side's version (including deletions)
- *   - changed identically on both → either
- *   - changed differently on both → a conflict: the more recent edit (updatedAt) wins, an
- *     edit always beats a deletion (nothing is silently lost), and every conflict is
- *     reported so the user can review it.
+ *   - changed on both → merged property by property (a record's values field by field, a
+ *     select's options by id): edits to different fields both survive. Only a property changed
+ *     differently on both sides is a conflict; the more recent edit (updatedAt) wins it and
+ *     it's reported for review. An edit always beats a deletion (nothing is silently lost).
  * Without a base (first sync between devices), records present on one side are kept,
  * unless the other side's tombstone shows a deletion newer than the record's last edit.
  */
@@ -32,6 +32,10 @@ export interface MergeConflict {
   /** Human-readable description of the record (e.g. collection and title). */
   label: string;
   resolution: 'kept-local' | 'kept-remote' | 'kept-edit-over-delete';
+  /** For records: the collection, so the review can open the record. */
+  collectionId?: Id;
+  /** The properties edited differently on both sides (field names for records). */
+  details?: string[];
 }
 
 export interface MergeResult {
@@ -57,7 +61,69 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 }
 
 type Labeler<T> = (item: T) => string;
+
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
+const isIdList = (v: unknown): v is { id: string }[] =>
+  Array.isArray(v) && v.every((x) => isObject(x) && typeof x.id === 'string');
+
+/**
+ * Three-way merge of JSON values. A side that didn't change from the base gives way to the
+ * other; objects merge key by key and lists of `{ id }` items (select options) item by item.
+ * Anything changed differently on both sides takes the preferred side and its path is
+ * recorded in `conflicts`.
+ */
+export function merge3(
+  base: unknown,
+  local: unknown,
+  remote: unknown,
+  prefer: 'local' | 'remote',
+  path: string[] = [],
+  conflicts: string[][] = [],
+): unknown {
+  if (deepEqual(local, remote)) return local;
+  if (deepEqual(base, local)) return remote;
+  if (deepEqual(base, remote)) return local;
+  if (isObject(local) && isObject(remote)) {
+    const b = isObject(base) ? base : {};
+    const out: Record<string, unknown> = {};
+    for (const key of new Set([...Object.keys(local), ...Object.keys(remote)])) {
+      const value = merge3(b[key], local[key], remote[key], prefer, [...path, key], conflicts);
+      if (value !== undefined) out[key] = value;
+    }
+    return out;
+  }
+  if (isIdList(local) && isIdList(remote)) {
+    const byId = (list: unknown) =>
+      new Map(isIdList(list) ? list.map((x) => [x.id, x] as const) : []);
+    const b = byId(base);
+    const l = byId(local);
+    const r = byId(remote);
+    // Local order, then items only the other side added.
+    const ids = [...l.keys(), ...[...r.keys()].filter((id) => !l.has(id))];
+    const out: unknown[] = [];
+    for (const id of ids) {
+      const value = merge3(b.get(id), l.get(id), r.get(id), prefer, [...path, id], conflicts);
+      if (value !== undefined) out.push(value);
+    }
+    // Removed on one side and untouched on the other: removed.
+    return out.filter((item) => {
+      const id = (item as { id: string }).id;
+      return !(
+        b.has(id) &&
+        (!l.has(id) || !r.has(id)) &&
+        (deepEqual(b.get(id), l.get(id)) || deepEqual(b.get(id), r.get(id)))
+      );
+    });
+  }
+  conflicts.push(path);
+  return prefer === 'local' ? local : remote;
+}
 type Stamped = { id: Id; updatedAt?: string };
+
+/** Describes conflicting property paths for the review (e.g. record values by field name). */
+type Describer<T> = (item: T, paths: string[][]) => string[];
 
 interface Context {
   conflicts: MergeConflict[];
@@ -75,6 +141,7 @@ function mergeMap<T extends Stamped>(
   remote: EntityMap<T>,
   label: Labeler<T>,
   ctx: Context,
+  describe?: Describer<T>,
 ): EntityMap<T> {
   const out: EntityMap<T> = {};
   const ids = new Set([...Object.keys(local), ...Object.keys(remote), ...Object.keys(base ?? {})]);
@@ -116,14 +183,24 @@ function mergeMap<T extends Stamped>(
             resolution: 'kept-edit-over-delete',
           });
       } else {
+        // Both edited: merge property by property; only real overlaps are conflicts.
         const remoteNewer = (r.updatedAt ?? '') > (l.updatedAt ?? '');
-        pick = remoteNewer ? r : l;
-        ctx.conflicts.push({
-          collection,
-          id,
-          label: label(l),
-          resolution: remoteNewer ? 'kept-remote' : 'kept-local',
-        });
+        const paths: string[][] = [];
+        const merged = merge3(b, l, r, remoteNewer ? 'remote' : 'local', [], paths) as T;
+        const updatedAt = [l.updatedAt, r.updatedAt].filter(Boolean).sort().at(-1);
+        pick = updatedAt ? { ...merged, updatedAt } : merged;
+        const real = paths.filter((p) => p[0] !== 'updatedAt');
+        if (real.length)
+          ctx.conflicts.push({
+            collection,
+            id,
+            label: label(l),
+            resolution: remoteNewer ? 'kept-remote' : 'kept-local',
+            ...('collectionId' in l && collection === 'records'
+              ? { collectionId: (l as unknown as { collectionId: Id }).collectionId }
+              : {}),
+            ...(describe ? { details: describe(l, real) } : {}),
+          });
       }
     }
     if (pick) {
@@ -219,6 +296,9 @@ export function mergeDocuments(
   );
   const fieldLabel = (f: Field) =>
     `${collections[f.collectionId]?.name ?? 'collection'} › ${f.name}`;
+  const fieldNames = new Map(
+    [...Object.values(remote.fields), ...Object.values(local.fields)].map((f) => [f.id, f.name]),
+  );
   const records = mergeMap(
     'records',
     b && flattenRecords(b),
@@ -226,6 +306,13 @@ export function mergeDocuments(
     flattenRecords(remote),
     (r) => recordLabel(r, collections),
     ctx,
+    (_r, paths) => [
+      ...new Set(
+        paths.map((p) =>
+          p[0] === 'values' && p[1] ? (fieldNames.get(p[1]) ?? 'a field') : (p[0] ?? ''),
+        ),
+      ),
+    ],
   );
   const recordStore: DocModel['records'] = {};
   for (const r of Object.values(records)) putRecord({ records: recordStore }, r);
@@ -278,6 +365,15 @@ function repairReferences(doc: DocModel): void {
       // Links stored under the vanished pair move to this field.
       if (inverseId < f.id) rekeyLinks(doc, inverseId, f.id, true);
     }
+  }
+  // Options merged from both sides: their order follows their position.
+  for (const f of Object.values(doc.fields)) {
+    if (f.type !== 'singleSelect' && f.type !== 'multiSelect') continue;
+    if (f.config.options.every((o, i) => o.order === i)) continue;
+    doc.fields[f.id] = {
+      ...f,
+      config: { ...f.config, options: f.config.options.map((o, i) => ({ ...o, order: i })) },
+    };
   }
   for (const v of Object.values(doc.views)) {
     if (!doc.collections[v.collectionId]) Reflect.deleteProperty(doc.views, v.id);

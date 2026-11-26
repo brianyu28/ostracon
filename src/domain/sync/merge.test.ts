@@ -14,6 +14,8 @@ import {
   type DocModel,
 } from '../model';
 import type { Link, RecordEntity } from '../schema/types';
+import { serializeModel } from '@/persistence/codec/serialize';
+import { parseDocument } from '../schema/document';
 import { mergeDocuments } from './merge';
 
 const clone = (d: DocModel): DocModel => structuredClone(d);
@@ -138,5 +140,89 @@ describe('mergeDocuments (without a base)', () => {
     const { merged } = mergeDocuments(null, local, remote);
     expect(getRecord(merged, people.id, p1!.id)).toBeUndefined();
     expect(getRecord(merged, people.id, p2!.id)).toBeDefined();
+  });
+});
+
+describe('mergeDocuments: per-field merging', () => {
+  const email = Object.values(base.fields).find(
+    (f) => f.collectionId === people.id && f.type === 'email',
+  )!;
+  const relationship = Object.values(base.fields).find(
+    (f) => f.collectionId === people.id && f.type === 'multiSelect',
+  )!;
+
+  it('keeps edits to different fields of the same record from both devices', () => {
+    const local = clone(base);
+    const remote = clone(base);
+    edit(local, p1!, { [nameField]: 'New name' }, '2026-04-01T10:00:00.000Z');
+    edit(remote, p1!, { [email.id]: 'new@example.com' }, '2026-04-01T11:00:00.000Z');
+    const { merged, conflicts } = mergeDocuments(base, local, remote);
+    const r = getRecord(merged, people.id, p1!.id)!;
+    expect(r.values[nameField]).toBe('New name');
+    expect(r.values[email.id]).toBe('new@example.com');
+    expect(r.updatedAt).toBe('2026-04-01T11:00:00.000Z');
+    expect(conflicts).toEqual([]);
+  });
+
+  it('reports a field edited differently on both, keeping the newer edit', () => {
+    const local = clone(base);
+    const remote = clone(base);
+    edit(
+      local,
+      p1!,
+      { [nameField]: 'Mine', [email.id]: 'a@example.com' },
+      '2026-04-01T12:00:00.000Z',
+    );
+    edit(remote, p1!, { [nameField]: 'Theirs' }, '2026-04-01T11:00:00.000Z');
+    const { merged, conflicts } = mergeDocuments(base, local, remote);
+    expect(getRecord(merged, people.id, p1!.id)!.values[nameField]).toBe('Mine');
+    expect(conflicts).toMatchObject([
+      { resolution: 'kept-local', collectionId: people.id, details: ['Name'] },
+    ]);
+  });
+
+  it('merges select options added, renamed and recolored on different devices', () => {
+    const local = clone(base);
+    const remote = clone(base);
+    if (relationship.type !== 'multiSelect') throw new Error('expected a multi select');
+    const [first, second] = relationship.config.options;
+    local.fields[relationship.id] = {
+      ...relationship,
+      config: {
+        options: [
+          ...relationship.config.options.map((o) =>
+            o.id === first!.id ? { ...o, name: 'Kin' } : o,
+          ),
+          { id: 'opt_localnew', name: 'Club', color: 'teal', order: 99 },
+        ],
+      },
+      updatedAt: '2026-04-01T10:00:00.000Z',
+    };
+    remote.fields[relationship.id] = {
+      ...relationship,
+      config: {
+        options: [
+          ...relationship.config.options.map((o) =>
+            o.id === second!.id ? { ...o, color: 'red' as const } : o,
+          ),
+          { id: 'opt_remotenew', name: 'Team', color: 'blue', order: 99 },
+        ],
+      },
+      updatedAt: '2026-04-01T11:00:00.000Z',
+    };
+    const { merged, conflicts } = mergeDocuments(base, local, remote);
+    const field = merged.fields[relationship.id];
+    if (field?.type !== 'multiSelect') throw new Error('expected a multi select');
+    const options = field.config.options;
+    expect(options.find((o) => o.id === first!.id)?.name).toBe('Kin');
+    expect(options.find((o) => o.id === second!.id)?.color).toBe('red');
+    expect(options.map((o) => o.id)).toEqual(
+      expect.arrayContaining(['opt_localnew', 'opt_remotenew']),
+    );
+    expect(options.map((o) => o.order)).toEqual(options.map((_, i) => i));
+    expect(conflicts).toEqual([]);
+    const parsed = parseDocument(serializeModel(merged));
+    if (!parsed.ok) throw new Error(JSON.stringify(parsed.error));
+    expect(parsed.integrityIssues).toEqual([]);
   });
 });
