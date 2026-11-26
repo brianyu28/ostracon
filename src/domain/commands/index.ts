@@ -28,6 +28,7 @@ import {
   setRecordValues,
 } from './records';
 import { importRecords } from './import';
+import { importCollections } from './transfer';
 import { updateSettings } from './settings';
 import { createFromTemplate } from './templates';
 import {
@@ -75,6 +76,7 @@ export const commands = {
   updateSettings,
   createFromTemplate,
   importRecords,
+  importCollections,
 };
 
 export type Commands = typeof commands;
@@ -87,4 +89,5 @@ export type { CollectionChanges } from './collections';
 export type { FieldChanges, NewField, NewLinkField } from './fields';
 export type { NewRecord, TextResult, TextRow } from './records';
 export type { ImportColumn, ImportInput, ImportResult } from './import';
+export type { ImportCollectionsResult } from './transfer';
 export type { ViewChanges } from './views';

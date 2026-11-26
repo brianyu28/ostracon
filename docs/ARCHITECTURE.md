@@ -168,6 +168,17 @@ Once the app is deployed, to change the schema:
 Additive optional fields still need a version bump, so that an older app refuses the file instead
 of silently dropping the field on save.
 
+### Collection exports
+
+A collection export is an ordinary data file that holds only some collections
+(`domain/transfer.ts`: `extractCollections` drops link fields to collections left out and repairs
+views). There is no separate export format to version: importing one runs the same load pipeline
+as opening a document (in the I/O worker), so an export from an older version migrates like any
+file, and one from a newer version is refused. The `importCollections` command copies the chosen
+collections of any loaded file (an export or a whole document) with fresh ids, rewriting every
+reference (fields, views, formulas, links), so importing twice never collides. Migrations
+therefore must not assume a file holds a complete document beyond what the schema requires.
+
 ## 6. The in-memory model
 
 `DocModel` (`domain/model.ts`) holds the same content as the file, but every entity list is a map

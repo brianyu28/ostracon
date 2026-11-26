@@ -1,0 +1,27 @@
+@use '@/styles/tokens' as *;
+
+.collections {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding-left: $space-5;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.count {
+  font-size: $font-sm;
+  color: var(--os-text-faint);
+  @include tabular;
+}
+
+.note {
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+}

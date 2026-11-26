@@ -1,20 +1,23 @@
 /**
- * Exports: the current view as CSV (visible fields, filtered and sorted), a collection as
- * readable JSON (field names as keys), or the whole document as plain JSON. Exports are never
- * encrypted; when the file is, a toast says so.
+ * Exports: the current view as CSV (visible fields, filtered and sorted), a collection's records
+ * as readable JSON (field names as keys), a collection as an Ostracon file (re-importable), or
+ * the whole document as plain JSON. Exports are never encrypted; when the file is, a toast says
+ * so.
  */
 import { FORMULA_ERROR, formulaValue } from '@/domain/computed';
 import { fieldType } from '@/domain/fields/registry';
 import { RAW_FORMAT } from '@/domain/fields/model';
 import { getRecord, iterateRecords } from '@/domain/model';
 import { recordTitle } from '@/domain/records';
-import type { Collection, Field, RecordEntity, View } from '@/domain/schema/types';
+import type { Collection, Field, Id, RecordEntity, View } from '@/domain/schema/types';
 import { collectionFields } from '@/domain/views/repair';
 import { viewColumns } from '@/features/table/columns';
 import { linkReader, formulaReader } from '@/features/table/linked';
 import { clipboardText } from '@/features/table/selection';
 import { toCsv } from '@/lib/csv';
+import { extractCollections } from '@/domain/transfer';
 import { today } from '@/lib/date';
+import { newId } from '@/lib/id';
 import { serializeModel } from '@/persistence/codec/serialize';
 import { docStore } from '@/store/docStore';
 import { sessionStore } from '@/store/sessionStore';
@@ -115,6 +118,28 @@ export function collectionJson(collection: Collection): string {
 
 export function exportCollectionJson(collection: Collection): void {
   download(`${collection.name}.json`, collectionJson(collection), 'application/json');
+  warnIfEncrypted();
+}
+
+/**
+ * A collection as an Ostracon file of its own, optionally with collections it links to (links
+ * to collections left out are dropped). Re-importable into any document, also after a schema
+ * change (it migrates like any file), and openable on its own. A new file id keeps it from being
+ * mistaken for the document it came from.
+ */
+export function exportCollectionFile(collection: Collection, include: readonly Id[] = []): void {
+  const doc = docStore.getState().doc;
+  if (!doc) return;
+  const part = extractCollections(doc, [collection.id, ...include]);
+  part.meta = {
+    ...doc.meta,
+    fileId: newId('file'),
+    revision: 0,
+    createdAt: new Date().toISOString(),
+    savedAt: null,
+    savedBy: null,
+  };
+  download(`${collection.name}.ostracon.json`, serializeModel(part), 'application/json');
   warnIfEncrypted();
 }
 

@@ -25,6 +25,8 @@ interface UiState {
   fieldEditor: FieldEditorTarget | null;
   /** CSV import: into a collection, or into a new one (collectionId absent). */
   importing: { collectionId?: Id } | null;
+  /** Exporting a collection that links to others (choosing which to include). */
+  exporting: { collectionId: Id } | null;
 }
 
 export const uiStore = createStore<UiState>()(() => ({
@@ -36,6 +38,7 @@ export const uiStore = createStore<UiState>()(() => ({
   collectionSettings: null,
   fieldEditor: null,
   importing: null,
+  exporting: null,
 }));
 
 export function useUi<T>(selector: (s: UiState) => T): T {
@@ -48,6 +51,9 @@ export const ui = {
   },
   openCollectionSettings: (collectionId: Id, tab: CollectionSettingsTab = 'general') => {
     uiStore.setState({ collectionSettings: { collectionId, tab } });
+  },
+  openExport: (collectionId: Id) => {
+    uiStore.setState({ exporting: { collectionId } });
   },
   openImport: (collectionId?: Id) => {
     uiStore.setState({ importing: collectionId ? { collectionId } : {} });

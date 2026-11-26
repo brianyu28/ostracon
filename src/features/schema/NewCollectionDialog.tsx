@@ -136,7 +136,7 @@ export function NewCollectionDialog() {
               ui.openImport();
             }}
           >
-            Import a CSV file instead
+            Import CSV or JSON instead
           </Button>
           <Divider my="md" label="Or start from a template" labelPosition="left" />
           <TemplateGallery

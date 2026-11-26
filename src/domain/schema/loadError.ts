@@ -12,7 +12,7 @@ export function describeLoadError(error: LoadError): string {
     case 'invalid-json':
       return `The file isn't valid JSON (${error.message}).`;
     case 'not-ostracon':
-      return "This doesn't look like a Ostracon data file.";
+      return "This doesn't look like an Ostracon data file.";
     case 'encrypted':
       return "This file is encrypted and couldn't be decrypted.";
     case 'newer-version':

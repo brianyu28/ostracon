@@ -79,3 +79,40 @@
   font-size: $font-xs;
   color: var(--os-warning);
 }
+
+.source {
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+  overflow-wrap: anywhere;
+}
+
+.collections {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.collectionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.count {
+  font-size: $font-sm;
+  color: var(--os-text-faint);
+  @include tabular;
+}
+
+.note {
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+}
+
+.error {
+  font-size: $font-sm;
+  color: var(--os-red-fg);
+  white-space: pre-line;
+}

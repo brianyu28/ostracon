@@ -40,6 +40,14 @@ export function toStored(display: string, fields: readonly Field[]): string {
   });
 }
 
+/** Stored text with field ids replaced (e.g. after copying fields under new ids). */
+export function remapRefs(stored: string, id: (old: Id) => Id): string {
+  return replaceRefs(stored, (ref) => {
+    const next = id(ref);
+    return next === ref ? undefined : `{${next}}`;
+  });
+}
+
 /** Stored text → editing text: ids become names. */
 export function toDisplay(stored: string, fields: Readonly<Record<Id, Field>>): string {
   return replaceRefs(stored, (ref) => {

@@ -18,6 +18,9 @@ import { parseCsv } from '@/lib/csv';
 import { pluralize } from '@/lib/format';
 import { toastWithUndo, tryDispatch } from '@/store/actions';
 import { useDocStore } from '@/store/docStore';
+import { describeLoadError } from '@/domain/schema/loadError';
+import { io } from '@/persistence/io';
+import { CollectionFileImport, type CollectionSource } from './CollectionFileImport';
 import { uiStore, useUi } from '@/store/uiStore';
 import styles from './ImportDialog.module.scss';
 
@@ -43,7 +46,7 @@ export function ImportDialog() {
     uiStore.setState({ importing: null });
   };
   return (
-    <Modal opened={target !== null} onClose={close} title="Import CSV" size="xl">
+    <Modal opened={target !== null} onClose={close} title="Import CSV or JSON" size="xl">
       {target && <ImportBody collectionId={target.collectionId} onClose={close} />}
     </Modal>
   );
@@ -65,6 +68,28 @@ function ImportBody({
   const [mappings, setMappings] = useState<Mapping[] | null>(null);
   const [newName, setNewName] = useState('');
   const [createLinks, setCreateLinks] = useState(true);
+  const [fileSource, setFileSource] = useState<CollectionSource | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  /** An Ostracon file (a collection export or a whole document): loaded, upgraded and checked in the worker. */
+  const loadOstracon = async (bytes: Uint8Array, name: string) => {
+    setLoadError(null);
+    try {
+      const result = await io.decode(bytes);
+      if (!result.ok) {
+        setLoadError(describeLoadError(result.error));
+        return;
+      }
+      setFileSource({
+        model: result.model,
+        name,
+        upgradedFrom: result.migrated.length ? result.originalVersion : undefined,
+        issues: result.integrityIssues.length,
+      });
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   const table = useMemo(() => parseCsv(text), [text]);
   const header = headers ? (table[0] ?? []) : [];
@@ -95,6 +120,12 @@ function ImportBody({
       return;
     }
     setFileName(file.name);
+    if (/\.json$/i.test(file.name)) {
+      setText('');
+      await loadOstracon(new Uint8Array(await file.arrayBuffer()), file.name);
+      return;
+    }
+    setLoadError(null);
     setText(await file.text());
     if (!newName) setNewName(file.name.replace(/\.(csv|tsv|txt)$/i, ''));
     setMappings(null);
@@ -153,15 +184,30 @@ function ImportBody({
 
   if (!doc) return null;
 
+  if (fileSource) {
+    return (
+      <CollectionFileImport
+        source={fileSource}
+        onBack={() => {
+          setFileSource(null);
+          setFileName(null);
+        }}
+        onClose={onClose}
+      />
+    );
+  }
+
+  const pastedJson = text.trimStart().startsWith('{');
+
   if (!mappings) {
     return (
       <div className={styles.step}>
         <Group gap="xs">
           <Button component="label" variant="default" leftSection={<IconFileUpload size={14} />}>
-            {fileName ?? 'Choose a CSV file'}
+            {fileName ?? 'Choose a file'}
             <input
               type="file"
-              accept=".csv,.tsv,.txt,text/csv,text/plain"
+              accept=".csv,.tsv,.txt,.json,text/csv,text/plain,application/json"
               hidden
               onChange={(e) => {
                 const file = e.currentTarget.files?.[0];
@@ -181,8 +227,10 @@ function ImportBody({
           onChange={(e) => {
             setText(e.currentTarget.value);
             setFileName(null);
+            setLoadError(null);
           }}
         />
+        {loadError && <div className={styles.error}>{loadError}</div>}
         <Checkbox
           label="The first row holds column names"
           checked={headers}
@@ -195,12 +243,13 @@ function ImportBody({
             Cancel
           </Button>
           <Button
-            disabled={rows.length === 0}
+            disabled={!pastedJson && rows.length === 0}
             onClick={() => {
-              setMappings(initialMappings());
+              if (pastedJson) void loadOstracon(new TextEncoder().encode(text), 'Pasted JSON');
+              else setMappings(initialMappings());
             }}
           >
-            Next: {pluralize(rows.length, 'row')}
+            {pastedJson ? 'Next' : `Next: ${pluralize(rows.length, 'row')}`}
           </Button>
         </Group>
       </div>

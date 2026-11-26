@@ -28,13 +28,18 @@ import { runCommand } from '@/keyboard/registry';
 import { useCommandHandlers } from '@/keyboard/useCommandHandlers';
 import { pluralize } from '@/lib/format';
 import { tryDispatch } from '@/store/actions';
-import { useDocStore } from '@/store/docStore';
+import { docStore, useDocStore } from '@/store/docStore';
 import { useViewResult } from '@/features/views/useViewResult';
 import { ViewTabs } from '@/features/views/ViewTabs';
 import { ViewToolbar } from '@/features/views/ViewToolbar';
 import { ui } from '@/store/uiStore';
 import { BulkBar } from './BulkBar';
-import { exportCollectionJson, exportViewCsv } from '@/features/export/exporters';
+import { linkedCollections } from '@/domain/transfer';
+import {
+  exportCollectionFile,
+  exportCollectionJson,
+  exportViewCsv,
+} from '@/features/export/exporters';
 import { RecordList } from './RecordList';
 import { BoardView } from '@/features/board/BoardView';
 import { CalendarView } from '@/features/calendar/CalendarView';
@@ -193,7 +198,7 @@ export function CollectionPage() {
               ui.openImport(collection.id);
             }}
           >
-            Import CSV…
+            Import CSV or JSON…
           </Menu.Item>
           <Menu.Item
             leftSection={<IconFileExport size={14} />}
@@ -204,12 +209,24 @@ export function CollectionPage() {
             Export view as CSV
           </Menu.Item>
           <Menu.Item
+            leftSection={<IconFileExport size={14} />}
+            onClick={() => {
+              // Linked collections can come along; ask only when there are some.
+              const state = docStore.getState().doc;
+              if (state && linkedCollections(state, collection.id).size > 0)
+                ui.openExport(collection.id);
+              else exportCollectionFile(collection);
+            }}
+          >
+            Export collection…
+          </Menu.Item>
+          <Menu.Item
             leftSection={<IconBraces size={14} />}
             onClick={() => {
               exportCollectionJson(collection);
             }}
           >
-            Export collection as JSON
+            Export records as JSON
           </Menu.Item>
           <Menu.Divider />
           <Menu.Item

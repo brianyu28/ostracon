@@ -227,11 +227,13 @@ export function HelpPage() {
             </li>
             <li>
               <b>Import</b> a CSV from a collection’s menu (or New collection): columns map to
-              fields, new fields get a guessed type, link columns match titles.
+              fields, new fields get a guessed type, link columns match titles. Import an exported
+              collection (or any Ostracon file) to copy its collections into this one.
             </li>
             <li>
-              <b>Export</b> a view as CSV or a collection as JSON from its menu; the whole file as
-              plain JSON from the file menu. Exports are never encrypted.
+              <b>Export</b> a view as CSV, a collection (to import elsewhere) or its records as JSON
+              from its menu; the whole file as plain JSON from the file menu. Exports are never
+              encrypted.
             </li>
           </ul>
         </section>
