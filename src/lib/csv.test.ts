@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectDelimiter, parseCsv, toCsv } from './csv';
+import { detectDelimiter, neutralizeFormula, parseCsv, toCsv } from './csv';
 
 describe('csv', () => {
   it('round-trips quotes, commas and line breaks', () => {
@@ -20,5 +20,15 @@ describe('csv', () => {
       ['a', 'b'],
       ['1', '2'],
     ]);
+  });
+
+  it('neutralizes cells a spreadsheet would run as formulas', () => {
+    expect(neutralizeFormula('=HYPERLINK("x")')).toBe('\'=HYPERLINK("x")');
+    expect(neutralizeFormula('@SUM(A1)')).toBe("'@SUM(A1)");
+    expect(neutralizeFormula('-2+3')).toBe("'-2+3");
+    expect(neutralizeFormula('-5')).toBe('-5');
+    expect(neutralizeFormula('+1,234.50')).toBe('+1,234.50');
+    expect(neutralizeFormula('Plain')).toBe('Plain');
+    expect(toCsv([['=1+1']])).toBe("'=1+1");
   });
 });

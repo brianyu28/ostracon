@@ -8,7 +8,6 @@ import {
   IconSearch,
 } from '@tabler/icons-react';
 import { useRef, useState, type ReactNode } from 'react';
-import { fieldType } from '@/domain/fields/registry';
 import type { Collection, Field, View } from '@/domain/schema/types';
 import { countConditions } from '@/domain/views/filter';
 import { FieldsMenu } from '@/features/collection/FieldsMenu';
@@ -30,8 +29,6 @@ interface ViewToolbarProps {
   compact?: boolean;
 }
 
-const SORTABLE = (f: Field) =>
-  f.type !== 'link' && f.type !== 'formula' && (fieldType(f).stored || f.type.endsWith('Time'));
 const GROUPABLE = (f: Field) => f.type !== 'formula' && f.type !== 'richText';
 
 /** Filter, Sort, Group, Fields and search for the current view. */
@@ -129,7 +126,7 @@ export function ViewToolbar({ collection, view, fields, compact = false }: ViewT
       {panel(
         'sort',
         toolButton('sort', <IconArrowsSort size={14} />, 'Sort', sortCount),
-        <SortEditor view={view} fields={fields.filter(SORTABLE)} />,
+        <SortEditor view={view} fields={fields} />,
       )}
       {view.layout === 'table' ? (
         <>

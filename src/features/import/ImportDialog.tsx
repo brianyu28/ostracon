@@ -1,6 +1,7 @@
 import { Alert, Button, Checkbox, Group, Modal, Select, Textarea, TextInput } from '@mantine/core';
 import { IconAlertTriangle, IconFileUpload } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
+import { toast } from '@/store/toastStore';
 import { useLocation } from 'wouter';
 import { collectionPath } from '@/app/routes';
 import { FieldTypeIcon } from '@/components/FieldTypeIcon/FieldTypeIcon';
@@ -19,6 +20,9 @@ import { toastWithUndo, tryDispatch } from '@/store/actions';
 import { useDocStore } from '@/store/docStore';
 import { uiStore, useUi } from '@/store/uiStore';
 import styles from './ImportDialog.module.scss';
+
+/** Pasting or parsing more than this in the main thread would freeze the tab. */
+const MAX_IMPORT_BYTES = 50 * 1024 * 1024;
 
 const NEW_TYPES = FIELD_TYPE_ORDER.filter(
   (t) => !['link', 'formula', 'createdTime', 'modifiedTime'].includes(t),
@@ -86,6 +90,10 @@ function ImportBody({
     });
 
   const loadFile = async (file: File) => {
+    if (file.size > MAX_IMPORT_BYTES) {
+      toast('That file is too large to import (the limit is 50 MB).', { kind: 'error' });
+      return;
+    }
     setFileName(file.name);
     setText(await file.text());
     if (!newName) setNewName(file.name.replace(/\.(csv|tsv|txt)$/i, ''));

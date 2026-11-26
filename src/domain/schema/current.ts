@@ -32,6 +32,19 @@ const NameSchema = z.string().trim().min(1).max(200);
 const DescriptionSchema = z.string().max(2000);
 /** `YYYY`, `YYYY-MM` or `YYYY-MM-DD` (validated precisely in the integrity pass). */
 const PartialDateSchema = z.string().regex(/^\d{4}(-\d{2}(-\d{2})?)?$/);
+/** A BCP 47 tag `Intl` accepts (a malformed one would make every formatter throw). */
+const LocaleSchema = z
+  .string()
+  .max(100)
+  .refine((tag) => {
+    try {
+      return Intl.getCanonicalLocales(tag).length === 1;
+    } catch {
+      return false;
+    }
+  }, 'Invalid locale');
+/** An ISO 4217 currency code. */
+const CurrencySchema = z.string().regex(/^[A-Z]{3}$/, 'Invalid currency');
 
 const Stamps = { createdAt: TimestampSchema, updatedAt: TimestampSchema };
 
@@ -52,11 +65,11 @@ export const ColorSchema = z.enum([
 // ── File settings (shared by every device that opens the file) ──────────────
 
 export const FileSettingsSchema = z.object({
-  locale: z.string().min(2),
+  locale: LocaleSchema,
   /** 0 = Sunday, 1 = Monday. */
   weekStartsOn: z.union([z.literal(0), z.literal(1)]),
   /** Default currency (ISO 4217) for new currency-formatted number fields. */
-  defaultCurrency: z.string().length(3),
+  defaultCurrency: CurrencySchema,
 });
 
 // ── Collections ──────────────────────────────────────────────────────────────
@@ -86,7 +99,7 @@ export const NumberFormatSchema = z.object({
   /** Show thousands separators. */
   thousands: z.literal(true).optional(),
   /** ISO 4217 code for the currency style (default: the file's default currency). */
-  currency: z.string().length(3).optional(),
+  currency: CurrencySchema.optional(),
 });
 
 export const SelectOptionSchema = z.object({
@@ -139,8 +152,10 @@ export const FieldSchema = z.discriminatedUnion('type', [
     'link',
     z.object({
       targetCollectionId: IdSchema,
-      /** The paired field on the target collection (this field's own id for a symmetric link). */
-      /** The paired field in the target collection (absent: a one-way link, no backlink). */
+      /**
+       * The paired field on the target collection: this field's own id for a symmetric link,
+       * absent for a one-way link (no backlink).
+       */
       inverseFieldId: IdSchema.optional(),
       /** Links to many records (otherwise at most one). */
       multiple: z.literal(true).optional(),

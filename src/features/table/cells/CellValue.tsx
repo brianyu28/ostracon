@@ -3,6 +3,7 @@ import { memo, type ReactNode } from 'react';
 import { OptionChip } from '@/components/OptionChip/OptionChip';
 import type { FormatContext } from '@/domain/fields/model';
 import { fieldType } from '@/domain/fields/registry';
+import { cleanUrl } from '@/domain/fields/types/text';
 import type { Field, Id, RecordEntity } from '@/domain/schema/types';
 import { markdownText } from '@/lib/markdown';
 import type { FormulaDisplay, LinkedRecord } from '../linked';
@@ -118,7 +119,8 @@ export const CellValue = memo(function CellValue({
       break;
     }
     case 'url':
-      if (typeof value === 'string') {
+      // Only http(s): a hand-edited file could hold another scheme (e.g. `javascript:`).
+      if (typeof value === 'string' && cleanUrl(value) === value) {
         content =
           field.config.display === 'image' ? (
             <img
@@ -133,7 +135,7 @@ export const CellValue = memo(function CellValue({
               {fieldType(field).format(value, field, format, 'display')}
             </ExternalLink>
           );
-      }
+      } else if (typeof value === 'string') content = value;
       break;
     case 'email':
       if (typeof value === 'string')

@@ -4,8 +4,9 @@ import '@/styles/global.scss';
 
 import { MantineProvider } from '@mantine/core';
 import { Suspense, type ReactNode } from 'react';
-import { Route, Router, Switch } from 'wouter';
+import { Route, Router, Switch, useLocation } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
+import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { Toaster } from '@/components/Toaster/Toaster';
 import { ConflictDialog } from './file/ConflictDialog';
 import { UnencryptedCopyDialog } from './file/UnencryptedCopyDialog';
@@ -27,6 +28,12 @@ interface AppProps {
   children?: ReactNode;
 }
 
+/** An error boundary for the current screen that resets on navigation. */
+function ScreenBoundary({ children }: { children: ReactNode }) {
+  const [location] = useLocation();
+  return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
+}
+
 /**
  * Root component. Hash-based routing keeps the app working on any static host
  * without server rewrite rules.
@@ -39,15 +46,17 @@ export function App({ children }: AppProps) {
           {routes.map(({ path, match, title, component: Page, standalone }) => (
             <Route key={path} path={match ?? path}>
               <AppLayout title={title}>
-                <Suspense fallback={null}>
-                  {standalone ? (
-                    <Page />
-                  ) : (
-                    <DocumentGate>
+                <ScreenBoundary>
+                  <Suspense fallback={null}>
+                    {standalone ? (
                       <Page />
-                    </DocumentGate>
-                  )}
-                </Suspense>
+                    ) : (
+                      <DocumentGate>
+                        <Page />
+                      </DocumentGate>
+                    )}
+                  </Suspense>
+                </ScreenBoundary>
               </AppLayout>
             </Route>
           ))}

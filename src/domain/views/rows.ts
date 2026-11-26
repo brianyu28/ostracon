@@ -10,8 +10,17 @@ function compareCreated(a: RecordEntity, b: RecordEntity): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
-/** A sortable value: stored values, timestamps or formula results. */
-function sortValue(record: RecordEntity, field: Field, ctx: FormulaAccess): unknown {
+/** What sorting needs besides stored values: formula results and linked records' titles. */
+export interface SortAccess extends FormulaAccess {
+  linkTitles?: (record: RecordEntity, field: Field) => readonly string[];
+}
+
+/** A sortable value: stored values, timestamps, formula results or linked titles. */
+function sortValue(record: RecordEntity, field: Field, ctx: SortAccess): unknown {
+  if (field.type === 'link') {
+    const titles = ctx.linkTitles?.(record, field) ?? [];
+    return titles.length ? titles.join(', ') : undefined;
+  }
   if (field.type === 'formula') {
     const v = formulaOf(record, field, ctx);
     return v === null || v === '' ? undefined : v;
@@ -26,14 +35,17 @@ export function sortRecords(
   records: RecordEntity[],
   sorts: readonly Sort[] | undefined,
   fields: Readonly<Record<Id, Field>>,
-  ctx: FormulaAccess = {},
+  ctx: SortAccess = {},
 ): RecordEntity[] {
   const active = (sorts ?? [])
     .map((s) => ({ field: fields[s.fieldId], dir: s.dir === 'desc' ? -1 : 1 }))
     .filter(
       (s): s is { field: Field; dir: number } =>
         s.field !== undefined &&
-        (fieldType(s.field).stored || s.field.type.endsWith('Time') || s.field.type === 'formula'),
+        (fieldType(s.field).stored ||
+          s.field.type.endsWith('Time') ||
+          s.field.type === 'formula' ||
+          (s.field.type === 'link' && ctx.linkTitles !== undefined)),
     );
   if (active.length === 0) return records.sort(compareCreated);
   // Each record's sort values are read once (formulas and timestamps aren't free), then sorted.
@@ -52,13 +64,15 @@ export function sortRecords(
       const d =
         field.type === 'formula'
           ? compareComputed(x, y)
-          : field.type === 'createdTime' || field.type === 'modifiedTime'
-            ? (x as string) < (y as string)
-              ? -1
-              : (x as string) > (y as string)
-                ? 1
-                : 0
-            : fieldType(field).compare(x as never, y as never, field);
+          : field.type === 'link'
+            ? collator.compare(x as string, y as string)
+            : field.type === 'createdTime' || field.type === 'modifiedTime'
+              ? (x as string) < (y as string)
+                ? -1
+                : (x as string) > (y as string)
+                  ? 1
+                  : 0
+              : fieldType(field).compare(x as never, y as never, field);
       if (d) return d * dir;
     }
     return compareCreated(a.record, b.record);

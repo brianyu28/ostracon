@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { putRecord, type DocModel } from '../model';
 import type { Field, View } from '../schema/types';
-import { viewRecords } from './rows';
+import { sortRecords, viewRecords } from './rows';
 
 const pages: Field = {
   id: 'fld_p',
@@ -53,5 +53,26 @@ describe('viewRecords', () => {
       'rec_2',
       'rec_1',
     ]);
+  });
+
+  it('sorts by linked titles when they are available, empty last', () => {
+    const link = { ...pages, id: 'fld_l', type: 'link', config: {} } as unknown as Field;
+    const titles: Record<string, string[]> = { rec_0: ['Mia'], rec_1: [], rec_2: ['ana'] };
+    const records = [...Object.keys(titles)].map((id, i) => ({
+      id,
+      collectionId: 'col',
+      values: {},
+      createdAt: String(i),
+      updatedAt: '',
+    }));
+    const sorted = sortRecords(
+      records,
+      [{ fieldId: link.id, dir: 'asc' }],
+      { [link.id]: link },
+      {
+        linkTitles: (r) => titles[r.id] ?? [],
+      },
+    );
+    expect(sorted.map((r) => r.id)).toEqual(['rec_2', 'rec_0', 'rec_1']);
   });
 });

@@ -53,7 +53,20 @@ function quote(cell: string): string {
   return /[",\r\n]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell;
 }
 
-/** Writes rows as CSV with CRLF line endings (what spreadsheets expect). */
+/**
+ * A cell a spreadsheet would run as a formula (`=`, `+`, `-`, `@`, tab or CR first), prefixed
+ * with `'` so it shows as text. Plain numbers such as `-5` or `+1.5` are left alone.
+ */
+export function neutralizeFormula(cell: string): string {
+  if (!/^[=+\-@\t\r]/.test(cell)) return cell;
+  if (/^[+-]?\d[\d,.\s]*%?$/.test(cell)) return cell;
+  return `'${cell}`;
+}
+
+/**
+ * Writes rows as CSV with CRLF line endings (what spreadsheets expect). Cells that would run
+ * as formulas are neutralized, so an exported value can't execute in the reader's spreadsheet.
+ */
 export function toCsv(rows: readonly (readonly string[])[]): string {
-  return rows.map((r) => r.map(quote).join(',')).join('\r\n');
+  return rows.map((r) => r.map((cell) => quote(neutralizeFormula(cell))).join(',')).join('\r\n');
 }

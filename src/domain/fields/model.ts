@@ -1,7 +1,7 @@
 /**
  * The contract every field type implements. One definition per type lives in
  * `domain/fields/types/`; the registry (`registry.ts`) maps a field's `type` to it. Everything
- * that handles values (commands, conversion, integrity checks, and later filters, sorting,
+ * that handles values (commands, conversion, integrity checks, filters, sorting,
  * grouping, export and search) goes through these definitions, so adding a type is one
  * module here plus its cell renderer and editor in the UI.
  */

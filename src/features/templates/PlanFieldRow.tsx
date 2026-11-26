@@ -13,7 +13,7 @@ import {
 } from '@/domain/templates/plan';
 import styles from './Templates.module.scss';
 
-/** Types a planned field can take (links come from the template; formulas arrive in Phase 7). */
+/** Types a planned field can take (links come from the template; formulas edit as text). */
 const TYPES = FIELD_TYPE_ORDER.filter((t) => t !== 'link' && t !== 'formula').map((t) => ({
   value: t,
   label: fieldType(t).label,

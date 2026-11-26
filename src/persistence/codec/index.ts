@@ -1,6 +1,6 @@
 /**
- * Codec: document model ⇄ file bytes. Today that's UTF-8 JSON; encryption will wrap
- * this layer later (an encrypted envelope is already detected by the loader).
+ * Codec: document model ⇄ file bytes (UTF-8 JSON). Encryption (`crypto.ts`) wraps these bytes
+ * in an envelope; the loader detects the envelope before decoding.
  */
 import type { DocModel } from '@/domain/model';
 import { parseDocument, type LoadResult } from '@/domain/schema/document';

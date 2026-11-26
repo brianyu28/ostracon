@@ -89,6 +89,7 @@ export function merge3(
     const b = isObject(base) ? base : {};
     const out: Record<string, unknown> = {};
     for (const key of new Set([...Object.keys(local), ...Object.keys(remote)])) {
+      if (key === '__proto__') continue; // never a schema key; assigning it would swap `out`'s prototype
       const value = merge3(b[key], local[key], remote[key], prefer, [...path, key], conflicts);
       if (value !== undefined) out[key] = value;
     }
