@@ -16,9 +16,10 @@ import type {
   LocationValue,
   RecordEntity,
 } from '../schema/types';
-import { overlaps, pointSpan, rangeSpan, valueSpan, type DateContext } from './dates';
+import { overlaps, pointSpan, rangeSpan, type DateContext } from './dates';
+import { formulaOf, numberOf, spanOf, type FormulaAccess } from './values';
 
-export interface ViewContext extends DateContext {
+export interface ViewContext extends DateContext, FormulaAccess {
   /** Linked record ids through a link field (from the index). */
   linked: (field: LinkField, recordId: Id) => readonly Id[];
 }
@@ -41,7 +42,12 @@ function textOf(
   record: RecordEntity,
   field: Field,
   part: FilterCondition['part'],
+  ctx: ViewContext,
 ): string | undefined {
+  if (field.type === 'formula') {
+    const f = formulaOf(record, field, ctx);
+    return f === null || f === '' ? undefined : String(f).toLowerCase();
+  }
   const v = record.values[field.id];
   if (v === undefined) return undefined;
   if (field.type === 'location') {
@@ -71,7 +77,11 @@ export function isEmpty(
     case 'modifiedTime':
       return false;
     case 'location':
-      return textOf(record, field, part) === undefined;
+      return textOf(record, field, part, ctx) === undefined;
+    case 'formula': {
+      const v = formulaOf(record, field, ctx);
+      return v === null || v === '' || v === false;
+    }
     default:
       return record.values[field.id] === undefined;
   }
@@ -93,12 +103,14 @@ function compileCondition(
   const { part } = c;
   if (op === 'isEmpty') return (r) => isEmpty(r, field, ctx, part);
   if (op === 'isNotEmpty') return (r) => !isEmpty(r, field, ctx, part);
-  if (op === 'isChecked') return (r) => r.values[field.id] === true;
-  if (op === 'isNotChecked') return (r) => r.values[field.id] !== true;
+  const checked = (r: RecordEntity) =>
+    field.type === 'formula' ? formulaOf(r, field, ctx) === true : r.values[field.id] === true;
+  if (op === 'isChecked') return checked;
+  if (op === 'isNotChecked') return (r) => !checked(r);
   if (op === 'onThisDay') {
     const md = ctx.today.slice(5);
     return (r) => {
-      const span = valueSpan(r, field);
+      const span = spanOf(r, field, ctx);
       return span !== undefined && span.start === span.end && span.start.slice(5) === md;
     };
   }
@@ -125,7 +137,10 @@ function compileTest(
     case 'isNot':
     case 'startsWith':
     case 'endsWith': {
-      if (DATE_FIELD.has(field.type))
+      if (
+        DATE_FIELD.has(field.type) ||
+        (field.type === 'formula' && ctx.formulaType?.(field) === 'date')
+      )
         return op === 'is' ? dateTest(field, op, value, ctx) : undefined;
       if (typeof value !== 'string') return undefined;
       const q = value.trim().toLowerCase();
@@ -138,7 +153,7 @@ function compileTest(
               ? t.endsWith(q)
               : t === q;
       const negate = op === 'notContains' || op === 'isNot';
-      return (r) => match(textOf(r, field, part) ?? '') !== negate;
+      return (r) => match(textOf(r, field, part, ctx) ?? '') !== negate;
     }
     case 'eq':
     case 'neq':
@@ -148,8 +163,8 @@ function compileTest(
     case 'gte': {
       if (typeof value !== 'number') return undefined;
       return (r) => {
-        const v = r.values[field.id];
-        if (typeof v !== 'number') return op === 'neq';
+        const v = numberOf(r, field, ctx);
+        if (v === undefined) return op === 'neq';
         switch (op) {
           case 'eq':
             return v === value;
@@ -173,8 +188,8 @@ function compileTest(
         number,
       ];
       return (r) => {
-        const v = r.values[field.id];
-        return typeof v === 'number' && v >= lo && v <= hi;
+        const v = numberOf(r, field, ctx);
+        return v !== undefined && v >= lo && v <= hi;
       };
     }
     case 'before':
@@ -240,13 +255,13 @@ function dateTest(
   if (op === 'within' || op === 'notWithin') {
     const span = rangeSpan(value as DateRangeOperand, ctx);
     return (r) => {
-      const v = valueSpan(r, field);
+      const v = spanOf(r, field, ctx);
       return v !== undefined && overlaps(v, span) === (op === 'within');
     };
   }
   const p = pointSpan(value as DatePoint, ctx);
   return (r) => {
-    const v = valueSpan(r, field);
+    const v = spanOf(r, field, ctx);
     if (!v) return false;
     switch (op) {
       case 'is':

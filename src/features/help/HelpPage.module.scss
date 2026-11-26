@@ -1,0 +1,146 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  gap: $space-5;
+  height: 100%;
+  padding: $space-3 $space-4;
+  overflow-y: auto;
+
+  @include phone {
+    flex-direction: column;
+    gap: $space-2;
+    padding: $space-3;
+  }
+}
+
+.toc {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 140px;
+  height: max-content;
+
+  a {
+    padding: 3px $space-2;
+    font-size: $font-sm;
+    color: var(--os-text-dim);
+    text-decoration: none;
+    border-radius: $radius-sm;
+
+    &:hover {
+      color: var(--os-text);
+      background: var(--os-surface-hover);
+    }
+  }
+
+  @include phone {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: auto;
+  }
+}
+
+.content {
+  max-width: 760px;
+  min-width: 0;
+
+  section {
+    margin-bottom: $space-5;
+  }
+
+  h2 {
+    margin: 0 0 $space-2;
+    font-size: $font-lg;
+  }
+
+  h3 {
+    margin: $space-3 0 $space-1;
+    font-size: $font-md;
+    color: var(--os-text-dim);
+  }
+
+  code {
+    font-family: var(--os-font-mono);
+    font-size: $font-sm;
+  }
+}
+
+.terms {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: $space-1 $space-3;
+  margin: 0;
+
+  dt {
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--os-text-dim);
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 4px $space-2 4px 0;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--os-border);
+  }
+
+  th {
+    width: 1%;
+    font-weight: 500;
+    white-space: nowrap;
+
+    @include phone {
+      white-space: normal;
+    }
+  }
+
+  td {
+    color: var(--os-text-dim);
+  }
+
+  // Phones: each row stacks (term above its description).
+  @include phone {
+    tr {
+      display: block;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--os-border);
+    }
+
+    th,
+    td {
+      display: block;
+      width: auto;
+      padding: 0;
+      border: 0;
+    }
+  }
+}
+
+.type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.list {
+  padding-left: 18px;
+  margin: 0;
+
+  li {
+    margin-bottom: 4px;
+  }
+}

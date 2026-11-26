@@ -35,7 +35,16 @@ export interface TemplateLinkField {
   symmetric?: boolean;
 }
 
-export type TemplateField = TemplateValueField | TemplateLinkField;
+/** A formula; `{Field name}` refers to fields by name (including backlinks created with it). */
+export interface TemplateFormulaField {
+  key: string;
+  name: string;
+  type: 'formula';
+  expression: string;
+  number?: Record<string, unknown>;
+}
+
+export type TemplateField = TemplateValueField | TemplateLinkField | TemplateFormulaField;
 
 /** A starter view; fields are referred to by key. */
 export interface TemplateView {
@@ -71,7 +80,12 @@ export interface Template {
   version: number;
   collection: TemplateCollection;
   /** The "With log" variant's second collection (e.g. visits), linked to the main one. */
-  log?: { label: string; collection: TemplateCollection };
+  log?: {
+    label: string;
+    collection: TemplateCollection;
+    /** Fields added to the main collection with the log (e.g. a visit count). */
+    parentFields?: TemplateField[];
+  };
 }
 
 /** Shorthand for select options with colors. */

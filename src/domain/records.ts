@@ -1,7 +1,11 @@
 /** Record helpers that need the schema: titles and value formatting. */
 import { fieldType } from './fields/registry';
 import { RAW_FORMAT, type FormatContext, type TextStyle } from './fields/model';
+import { formulaValue, FORMULA_ERROR, type ComputeContext } from './computed';
+import { formulaResultType } from './formulas/compile';
+import { ERROR_TEXT, formulaText } from './formulas/format';
 import type { DocModel } from './model';
+import { today } from '@/lib/date';
 import type { Field, RecordEntity } from './schema/types';
 
 /** Text of a record's value for a stored field ('' when empty). */
@@ -16,14 +20,16 @@ export function valueText(
   return fieldType(field).format(value, field, ctx, style);
 }
 
-/** A record's title: its primary field's text, or "Untitled". */
-export function recordTitle(
-  doc: Pick<DocModel, 'collections' | 'fields'>,
-  record: RecordEntity,
-): string {
+/** A record's title: its primary field's text (a formula's result), or "Untitled". */
+export function recordTitle(doc: DocModel, record: RecordEntity, ctx?: ComputeContext): string {
   const collection = doc.collections[record.collectionId];
   const primary = collection ? doc.fields[collection.primaryFieldId] : undefined;
-  // Formula titles are computed by the formula engine (Phase 7).
-  const title = primary && primary.type !== 'formula' ? valueText(record, primary) : '';
+  if (primary?.type === 'formula') {
+    const value = formulaValue(doc, primary, record, ctx ?? { today: today() });
+    if (value === FORMULA_ERROR) return ERROR_TEXT;
+    const text = formulaText(value, formulaResultType(doc.fields, primary), primary, RAW_FORMAT);
+    return text || 'Untitled';
+  }
+  const title = primary ? valueText(record, primary) : '';
   return title || 'Untitled';
 }

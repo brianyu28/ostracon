@@ -48,6 +48,8 @@ src/
     fields/       Field type registry (one definition per type), operators, formatting, type changes
     links.ts      Link pairs: canonical storage, keys, lookups
     records.ts    Record titles and value text
+    formulas/     Formula tokenizer, parser, type checker, functions, evaluator, compile cache
+    computed.ts   Formula values per record (cached), the computed-value layer
     templates/    Template catalog (data), planning a template into an editable plan
     views/        View repair (keeping views consistent with their fields), row order (rows.ts)
     commands/     Every document mutation, as a named command
@@ -285,6 +287,20 @@ date buckets, location part; empty group last) and `summaries.ts` computes foote
 group-header summaries. The UI (`features/views/useViewResult.ts`) memoizes the result on the
 collection's index version, the view, the fields, the search text and today's date.
 
+### Formulas
+
+A formula field stores its expression with field ids (`{fld_…}`); the editor shows names
+(`formulas/expression.ts`). `formulas/` parses it (precedence climbing), checks it statically
+(result type number/text/date/yes-no, the fields it reads, whether it uses `TODAY()` or links;
+cycles are found by following references into other formulas) and evaluates it. Compiled
+formulas are cached per version of the document's field map. `computed.ts` evaluates a
+formula for a record and caches the result on the record object (records are immutable), reused
+while the fields are unchanged, the day is the same (for `TODAY()`) and, for formulas that read
+links, the document is the same. Errors are per record (`#ERR`). Views read formulas through
+`views/values.ts`, so a formula filters, sorts, groups and summarizes like a field of its result
+type (`fields/dynamic.ts` gives its operators and summaries). Commands reject a formula that
+doesn't check, including cycles. Sorting computes each record's sort values once.
+
 ### The table
 
 `features/table/` is the table layout: a virtualized grid (one scroll element for both axes, a
@@ -452,6 +468,9 @@ field). It also requires **Trusted Types**: code-loading sinks accept only value
 
 **Add a screen.** Add a route in `app/routes.ts` and a page in `features/<name>/`. Add a `go to`
 keyboard command in the catalog if it deserves one.
+
+**Add a formula function.** Add an entry to `domain/formulas/functions.ts` (parameters, result
+type, implementation); checking, evaluation and the editor's autocomplete read the table.
 
 **Add a template.** Add an entry to `domain/templates/catalog.ts` (fields by key, links to other
 templates by key, starter views); the gallery, preview and `createFromTemplate` read it. The

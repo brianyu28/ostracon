@@ -6,6 +6,7 @@ import { collator } from '../fields/model';
 import { locationText } from '../fields/types/other';
 import type { Field, Id, LocationValue, RecordEntity, View } from '../schema/types';
 import { periodStart, valueSpan } from './dates';
+import { formulaOf } from './values';
 import type { ViewContext } from './filter';
 
 export type GroupSetting = NonNullable<View['group']>;
@@ -24,6 +25,19 @@ export function groupKey(
 ): string {
   const v = record.values[field.id];
   switch (field.type) {
+    case 'formula': {
+      const value = formulaOf(record, field, ctx);
+      if (value === null || value === '') return '';
+      if (typeof value === 'boolean') return value ? 'true' : 'false';
+      if (typeof value === 'number') return String(value);
+      if (ctx.formulaType?.(field) === 'date') {
+        const bucket = group.dateBucket;
+        if (!bucket || bucket === 'day') return value;
+        if (bucket === 'week') return periodStart(value, 'week', ctx.weekStartsOn);
+        return bucket === 'month' ? value.slice(0, 7) : value.slice(0, 4);
+      }
+      return value.trim().toLowerCase();
+    }
     case 'checkbox':
       return v === true ? 'true' : 'false';
     case 'link':
@@ -65,7 +79,9 @@ export function groupKey(
   }
 }
 
-function keyComparator(field: Field): (a: string, b: string) => number {
+function keyComparator(field: Field, ctx: ViewContext): (a: string, b: string) => number {
+  if (field.type === 'formula' && ctx.formulaType?.(field) === 'number')
+    return (a, b) => Number(a) - Number(b);
   switch (field.type) {
     case 'number':
     case 'rating':
@@ -101,7 +117,7 @@ export function groupRecords(
     if (!list) byKey.set(key, (list = []));
     list.push(r);
   }
-  const compare = keyComparator(field);
+  const compare = keyComparator(field, ctx);
   const dir = group.dir === 'desc' ? -1 : 1;
   const keys = [...byKey.keys()].sort((a, b) => {
     if (a === '' || b === '') return a === b ? 0 : a === '' ? 1 : -1;

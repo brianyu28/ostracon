@@ -7,6 +7,8 @@ import { generateDemoDocument } from '../src/domain/demo/generate';
 import { countLinks, countRecords, iterateRecords, type DocModel } from '../src/domain/model';
 import { parseDocument } from '../src/domain/schema/document';
 import type { Field } from '../src/domain/schema/types';
+import { formulaValue } from '../src/domain/computed';
+import { formulaResultType } from '../src/domain/formulas/compile';
 import { evaluateView } from '../src/domain/views/evaluate';
 import { viewRecords } from '../src/domain/views/rows';
 import { serializeModel } from '../src/persistence/codec/serialize';
@@ -70,6 +72,34 @@ const retypeFields = [0, 1, 2, 3].map((i) => {
   });
   return id;
 });
+// A formula over every visit: days since the visit plus a text label.
+const ageFormula = dispatch('createField', {
+  collectionId: visits.collectionId,
+  name: 'Days ago',
+  type: 'formula',
+  config: { expression: `DATEDIFF({${visitDate.id}}, TODAY()) + LEN({${notes.id}})` },
+});
+function evaluateByFormula() {
+  const state = store.getState();
+  const view = Object.values(state.doc?.views ?? {}).find(
+    (v) => v.collectionId === visits.collectionId,
+  );
+  const doc = state.doc;
+  if (!view || !doc) return;
+  void evaluateView(
+    doc,
+    { ...view, sorts: [{ fieldId: ageFormula, dir: 'asc' }] },
+    {
+      today: '2026-11-26',
+      weekStartsOn: 1,
+      linked: (field, id) => state.index?.linked(field, id) ?? [],
+      format: { locale: 'en-US', defaultCurrency: 'USD', dateStyle: 'medium' },
+      formula: (record, field) => formulaValue(doc, field, record, { today: '2026-11-26' }),
+      formulaType: (field) => formulaResultType(doc.fields, field),
+    },
+  );
+}
+
 const cases: Case[] = [
   {
     name: 'Parse + validate + integrity',
@@ -226,6 +256,22 @@ const cases: Case[] = [
         format: { locale: 'en-US', defaultCurrency: 'USD', dateStyle: 'medium' },
         search: `pasted ${String(n++ % 900)}`,
       });
+    },
+  },
+  {
+    name: 'Sort a 22k-record view by a formula (first run computes)',
+    targetMs: 150,
+    runs: 1,
+    fn: () => {
+      evaluateByFormula();
+    },
+  },
+  {
+    name: 'Sort a 22k-record view by a formula (cached)',
+    targetMs: 60,
+    runs: 5,
+    fn: () => {
+      evaluateByFormula();
     },
   },
   {

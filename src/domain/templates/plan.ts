@@ -4,8 +4,15 @@
  * where each link points (an existing collection, one the plan creates, or nowhere).
  */
 import type { Collection, Color, Field, FieldType, Id, View } from '../schema/types';
+import { toDisplay } from '../formulas/expression';
 import { TEMPLATES_BY_KEY } from './catalog';
-import type { Template, TemplateCollection, TemplateLinkField, TemplateView } from './model';
+import type {
+  Template,
+  TemplateCollection,
+  TemplateField,
+  TemplateLinkField,
+  TemplateView,
+} from './model';
 
 export type PlanTarget =
   | { kind: 'existing'; collectionId: Id }
@@ -58,6 +65,22 @@ function findExisting(
   );
 }
 
+function planField(f: TemplateField): PlanField {
+  if (f.type === 'formula')
+    return {
+      key: f.key,
+      name: f.name,
+      type: 'formula',
+      config: { expression: f.expression, ...(f.number ? { number: f.number } : {}) },
+    };
+  return {
+    key: f.key,
+    name: f.name,
+    type: f.type,
+    ...(f.type !== 'link' && f.config ? { config: structuredClone(f.config) } : {}),
+  };
+}
+
 function planCollection(
   ref: string,
   source: TemplateCollection,
@@ -69,12 +92,7 @@ function planCollection(
     icon: source.icon,
     color: source.color,
     primary: source.primary,
-    fields: source.fields.map((f) => ({
-      key: f.key,
-      name: f.name,
-      type: f.type,
-      ...(f.type !== 'link' && f.config ? { config: structuredClone(f.config) } : {}),
-    })),
+    fields: source.fields.map(planField),
     views: structuredClone(source.views),
     ...(template ? { template: { key: template.key, version: template.version } } : {}),
   };
@@ -92,6 +110,7 @@ export function planTemplate(
   const plan: TemplatePlan = { collections: [main] };
   const sources: [PlanCollection, TemplateCollection][] = [[main, template.collection]];
   if (options.withLog && template.log) {
+    main.fields.push(...(template.log.parentFields ?? []).map(planField));
     const log = planCollection('log', template.log.collection);
     plan.collections.push(log);
     sources.push([log, template.log.collection]);
@@ -172,7 +191,7 @@ export function planFromCollection(
   const source = doc.collections[collectionId];
   if (!source) return { collections: [] };
   const fields = Object.values(doc.fields)
-    .filter((f) => f.collectionId === collectionId && f.type !== 'formula')
+    .filter((f) => f.collectionId === collectionId)
     .sort((a, b) => a.order - b.order);
   const keyOf = (id: Id) => id;
   const views: TemplateView[] = Object.values(doc.views)
@@ -203,6 +222,16 @@ export function planFromCollection(
         color: source.color,
         primary: source.primaryFieldId,
         fields: fields.map((f) => {
+          if (f.type === 'formula')
+            return {
+              key: f.id,
+              name: f.name,
+              type: 'formula',
+              config: {
+                ...structuredClone(f.config),
+                expression: toDisplay(f.config.expression, doc.fields),
+              },
+            };
           if (f.type !== 'link')
             return {
               key: f.id,

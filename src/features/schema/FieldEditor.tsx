@@ -6,26 +6,26 @@ import { planTypeChange, type TypeChangePlan } from '@/domain/fields/convert';
 import { FIELD_TYPE_ORDER, fieldType } from '@/domain/fields/registry';
 import { iterateRecords } from '@/domain/model';
 import { DEFAULT_SETTINGS } from '@/domain/schema/defaults';
-import type { Field, FieldType } from '@/domain/schema/types';
+import type { Field, FieldType, NumberFormat } from '@/domain/schema/types';
 import { useFormatContext } from '@/hooks/useFormatContext';
 import { newId } from '@/lib/id';
+import { toDisplay, toStored } from '@/domain/formulas/expression';
 import { pluralize } from '@/lib/format';
 import { toast } from '@/store/toastStore';
 import { useDocStore } from '@/store/docStore';
 import { toastWithUndo, tryDispatch, tryRun } from '@/store/actions';
 import { uiStore, useUi, type FieldEditorTarget } from '@/store/uiStore';
 import { BacklinkOptions } from './BacklinkOptions';
+import { FormulaEditor } from './FormulaEditor';
 import { DeleteFieldDialog } from './DeleteFieldDialog';
 import { FieldConfigEditor, type ConfigDraft } from './FieldConfigEditor';
 import { NewLinkOptions, type LinkDraft } from './NewLinkOptions';
 import styles from './FieldEditor.module.scss';
 
-/** Types a field can be changed to (formulas arrive in Phase 7; links are created new). */
-const PICKABLE: readonly FieldType[] = FIELD_TYPE_ORDER.filter(
-  (t) => t !== 'link' && t !== 'formula',
-);
+/** Types a field can be changed to (link fields are only created new). */
+const PICKABLE: readonly FieldType[] = FIELD_TYPE_ORDER.filter((t) => t !== 'link');
 /** Types offered for a new field. */
-const PICKABLE_NEW: readonly FieldType[] = FIELD_TYPE_ORDER.filter((t) => t !== 'formula');
+const PICKABLE_NEW: readonly FieldType[] = FIELD_TYPE_ORDER;
 
 /** The app-wide field editor dialog, opened through `ui.openFieldEditor`. */
 export function FieldEditorDialog() {
@@ -47,7 +47,13 @@ export function FieldEditorDialog() {
   );
 }
 
-function configOf(field: Field): ConfigDraft {
+/** A field's config as edited: formulas show field names instead of ids. */
+function configOf(field: Field, fields: Readonly<Record<string, Field>> = {}): ConfigDraft {
+  if (field.type === 'formula')
+    return {
+      ...structuredClone(field.config),
+      expression: toDisplay(field.config.expression, fields),
+    };
   return 'config' in field ? structuredClone(field.config) : {};
 }
 
@@ -64,7 +70,7 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
   const [type, setType] = useState<FieldType>(original?.type ?? 'text');
   const [config, setConfig] = useState<ConfigDraft>(() =>
     original
-      ? configOf(original)
+      ? configOf(original, doc?.fields)
       : ((fieldType('text').defaultConfig({ settings, newId }) ?? {}) as ConfigDraft),
   );
   const [description, setDescription] = useState(original?.description ?? '');
@@ -113,7 +119,7 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
     setType(next);
     setError(null);
     if (original && next === original.type) {
-      setConfig(configOf(original));
+      setConfig(configOf(original, doc.fields));
     } else if (original) {
       // Start from what the conversion would derive (e.g. options from existing text values).
       const derived = planTypeChange(doc, original, next, undefined, {
@@ -123,6 +129,8 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
         ...(index ? { links: index } : {}),
       });
       setConfig(typeof derived === 'string' ? {} : configOf(derived.field));
+    } else if (next === 'formula') {
+      setConfig({ expression: '' });
     } else if (next === 'link') {
       setConfig({}); // links are configured by NewLinkOptions
     } else {
@@ -156,7 +164,18 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
       return;
     }
     const def = fieldType(type);
-    const normalized = def.normalizeConfig(config, configCtx);
+    // Formulas are typed with field names and stored with ids.
+    const saved: ConfigDraft =
+      type === 'formula'
+        ? {
+            ...config,
+            expression: toStored(
+              typeof config.expression === 'string' ? config.expression : '',
+              Object.values(doc.fields).filter((f) => f.collectionId === target.collectionId),
+            ),
+          }
+        : config;
+    const normalized = def.normalizeConfig(saved, configCtx);
     if (type !== 'link' && typeof normalized === 'string') {
       setError(normalized);
       return;
@@ -170,7 +189,7 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
       const id = tryDispatch('createField', {
         collectionId: target.collectionId,
         type,
-        config,
+        config: saved,
         ...basics,
         description: description.trim(),
         ...(target.viewId ? { viewId: target.viewId } : {}),
@@ -183,7 +202,7 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
       const result = tryDispatch('changeFieldType', {
         id: original.id,
         type,
-        config,
+        config: saved,
         changes: basics,
       });
       if (result === undefined) return;
@@ -196,10 +215,10 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
       onClose();
       return;
     }
-    const configChanged = JSON.stringify(config) !== JSON.stringify(configOf(original));
+    const configChanged = JSON.stringify(config) !== JSON.stringify(configOf(original, doc.fields));
     const ok = tryRun('updateField', {
       id: original.id,
-      changes: { ...basics, ...(configChanged ? { config } : {}) },
+      changes: { ...basics, ...(configChanged ? { config: saved } : {}) },
     });
     if (ok) onClose();
   };
@@ -249,7 +268,19 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
         }}
       />
       <div className={styles.config}>
-        {!original && type === 'link' ? (
+        {type === 'formula' ? (
+          <FormulaEditor
+            fieldId={original?.id}
+            collectionId={target.collectionId}
+            expression={typeof config.expression === 'string' ? config.expression : ''}
+            number={config.number as NumberFormat | undefined}
+            format={format}
+            onChange={(expression, number) => {
+              setConfig(number ? { expression, number } : { expression });
+              setError(null);
+            }}
+          />
+        ) : !original && type === 'link' ? (
           <NewLinkOptions
             collection={collection}
             collections={Object.values(doc.collections).sort((a, b) => a.order - b.order)}

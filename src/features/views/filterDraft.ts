@@ -1,5 +1,6 @@
 /** Helpers for editing a filter tree immutably in the filter builder. */
-import { fieldType } from '@/domain/fields/registry';
+import { operatorsFor } from '@/domain/fields/dynamic';
+import { docStore } from '@/store/docStore';
 import type { OperandKind, OperatorId } from '@/domain/fields/operators';
 import type { Field, FilterCondition, FilterGroup } from '@/domain/schema/types';
 
@@ -8,12 +9,18 @@ export type FilterItem = FilterGroup['items'][number];
 /** Nested groups allowed below the top level (the schema repairs deeper ones away). */
 export const MAX_DEPTH = 2;
 
+function fieldsMap(): Readonly<Record<string, Field>> {
+  return docStore.getState().doc?.fields ?? {};
+}
+
 export function operatorsOf(field: Field): [OperatorId, OperandKind][] {
-  return Object.entries(fieldType(field).operators) as [OperatorId, OperandKind][];
+  return Object.entries(operatorsFor(field, fieldsMap())) as [OperatorId, OperandKind][];
 }
 
 export function operandKind(field: Field, operator: string): OperandKind {
-  return (fieldType(field).operators as Partial<Record<string, OperandKind>>)[operator] ?? 'none';
+  return (
+    (operatorsFor(field, fieldsMap()) as Partial<Record<string, OperandKind>>)[operator] ?? 'none'
+  );
 }
 
 /** The operand a new condition starts with (date inputs always show a choice). */

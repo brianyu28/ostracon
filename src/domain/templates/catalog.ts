@@ -21,6 +21,13 @@ const f = (
   config?: Record<string, unknown>,
 ): TemplateValueField => ({ key, name, type, ...(config ? { config } : {}) });
 
+const formula = (key: string, name: string, expression: string): TemplateField => ({
+  key,
+  name,
+  type: 'formula',
+  expression,
+});
+
 const link = (
   key: string,
   name: string,
@@ -59,6 +66,11 @@ export const TEMPLATES: readonly Template[] = [
           options('Family', 'Friend', 'Work', 'Neighbor'),
         ),
         f('birthday', 'Birthday', 'date', PARTIAL),
+        formula(
+          'age',
+          'Age',
+          'IF(ISBLANK({Birthday}), BLANK(), DATEDIFF({Birthday}, TODAY(), "years"))',
+        ),
         f('met', 'How we met', 'text'),
         f('location', 'Lives in', 'location', CITY),
         f('email', 'Email', 'email'),
@@ -115,6 +127,7 @@ export const TEMPLATES: readonly Template[] = [
     },
     log: {
       label: 'visits',
+      parentFields: [formula('count', 'Visit count', 'COUNT_LINKS({Visits})')],
       collection: {
         name: 'Restaurant visits',
         icon: 'calendar-event',
@@ -210,6 +223,7 @@ export const TEMPLATES: readonly Template[] = [
         ),
         f('started', 'Started', 'date', PARTIAL),
         f('finished', 'Finished', 'date', PARTIAL),
+        formula('days', 'Days to read', 'DATEDIFF({Started}, {Finished})'),
         f('rating', 'Rating', 'rating', STARS),
         f('format', 'Format', 'singleSelect', options('Print', 'E-book', 'Audiobook')),
         f('pages', 'Pages', 'number', { style: 'plain' }),
@@ -234,6 +248,7 @@ export const TEMPLATES: readonly Template[] = [
     },
     log: {
       label: 'reads',
+      parentFields: [formula('count', 'Times read', 'COUNT_LINKS({Reads})')],
       collection: {
         name: 'Reads',
         icon: 'notebook',
@@ -290,6 +305,7 @@ export const TEMPLATES: readonly Template[] = [
     },
     log: {
       label: 'watches',
+      parentFields: [formula('count', 'Times watched', 'COUNT_LINKS({Watches})')],
       collection: {
         name: 'Watches',
         icon: 'player-play',
@@ -349,6 +365,7 @@ export const TEMPLATES: readonly Template[] = [
     },
     log: {
       label: 'seasons',
+      parentFields: [formula('count', 'Seasons logged', 'COUNT_LINKS({Seasons})')],
       collection: {
         name: 'Seasons',
         icon: 'device-tv',
@@ -403,6 +420,7 @@ export const TEMPLATES: readonly Template[] = [
     },
     log: {
       label: 'attempts',
+      parentFields: [formula('count', 'Tries', 'COUNT_LINKS({Attempts})')],
       collection: {
         name: 'Attempts',
         icon: 'hourglass',
@@ -453,6 +471,11 @@ export const TEMPLATES: readonly Template[] = [
         f('price', 'Price', 'number', CURRENCY),
         f('serial', 'Serial number', 'text'),
         f('warranty', 'Warranty until', 'date'),
+        formula(
+          'covered',
+          'Under warranty',
+          'AND(NOT(ISBLANK({Warranty until})), {Warranty until} >= TODAY())',
+        ),
         f('retired', 'Retired', 'checkbox'),
       ],
       views: [
@@ -586,6 +609,7 @@ export const TEMPLATES: readonly Template[] = [
     },
     log: {
       label: 'sessions',
+      parentFields: [formula('count', 'Sessions played', 'COUNT_LINKS({Sessions})')],
       collection: {
         name: 'Play sessions',
         icon: 'clock',

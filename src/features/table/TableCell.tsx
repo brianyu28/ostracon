@@ -4,7 +4,7 @@ import type { FormatContext } from '@/domain/fields/model';
 import type { Field, Id, RecordEntity } from '@/domain/schema/types';
 import { CellValue } from './cells/CellValue';
 import type { Column } from './columns';
-import type { LinkedRecord, LinkReader } from './linked';
+import type { FormulaReader, LinkedRecord, LinkReader } from './linked';
 import styles from './TableView.module.scss';
 
 interface TableCellProps {
@@ -18,6 +18,7 @@ interface TableCellProps {
   editor: ReactNode;
   format: FormatContext;
   links: LinkReader;
+  formulas: FormulaReader;
   /** Opens a linked record (from a chip in the cursor's cell). */
   onOpenLink?: ((field: Field, id: Id) => void) | undefined;
   handlers: CellHandlers;
@@ -48,6 +49,7 @@ export function TableCell({
   editor,
   format,
   links: readLinks,
+  formulas,
   onOpenLink,
   handlers,
 }: TableCellProps) {
@@ -87,6 +89,7 @@ export function TableCell({
           field={field}
           format={format}
           {...(links ? { links } : {})}
+          {...(field.type === 'formula' ? { formula: formulas(record, field) } : {})}
           {...(onOpenLink && isCursor && field.type === 'link'
             ? {
                 onOpenLink: (id: Id) => {

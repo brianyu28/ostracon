@@ -5,7 +5,7 @@ import type { FormatContext } from '@/domain/fields/model';
 import { fieldType } from '@/domain/fields/registry';
 import type { Field, Id, RecordEntity } from '@/domain/schema/types';
 import { markdownText } from '@/lib/markdown';
-import type { LinkedRecord } from '../linked';
+import type { FormulaDisplay, LinkedRecord } from '../linked';
 import { LinkChip } from './LinkChip';
 import { RatingIcons } from './RatingIcons';
 import { timestampText } from './timestamp';
@@ -15,6 +15,8 @@ export interface CellValueProps {
   record: RecordEntity;
   field: Field;
   format: FormatContext;
+  /** A formula's result (formula fields). */
+  formula?: FormulaDisplay;
   /** Linked records (link fields). */
   links?: readonly LinkedRecord[];
   /** Opens a linked record from its chip. */
@@ -34,6 +36,7 @@ export const CellValue = memo(function CellValue({
   format,
   links,
   onOpenLink,
+  formula,
   wrap,
   onSet,
 }: CellValueProps) {
@@ -65,7 +68,13 @@ export const CellValue = memo(function CellValue({
       );
       break;
     case 'formula':
-      content = null; // Phase 7
+      content = formula ? (
+        formula.error ? (
+          <span className={styles.error}>{formula.text}</span>
+        ) : (
+          formula.text
+        )
+      ) : null;
       break;
     case 'checkbox':
       content = (
@@ -145,7 +154,7 @@ export const CellValue = memo(function CellValue({
       className={clsx(
         styles.value,
         wrap && styles.wrap,
-        NUMERIC.has(field.type) && !wrap && styles.numeric,
+        (NUMERIC.has(field.type) || formula?.numeric) && !wrap && styles.numeric,
       )}
     >
       {content}

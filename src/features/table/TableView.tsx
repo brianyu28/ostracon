@@ -20,7 +20,7 @@ import { duplicateRecords } from '@/features/record/recordActions';
 import { DeleteFieldDialog } from '@/features/schema/DeleteFieldDialog';
 import { applyEdit, pasteMessage } from './applyEdit';
 import { GUTTER_WIDTH, viewColumns } from './columns';
-import { linkReader } from './linked';
+import { useReaders } from './useReaders';
 import { hasEditor } from './editors/hasEditor';
 import { ValueEditor } from './editors/ValueEditor';
 import type { EditorChange, EditorExit } from './editors/types';
@@ -73,8 +73,6 @@ export function TableView({
   onDeleteRecords,
 }: TableViewProps) {
   const doc = useDocStore((s) => s.doc);
-  const index = useDocStore((s) => s.index);
-  const indexVersion = useDocStore((s) => s.indexVersion);
   const density = usePrefs((s) => s.density);
   const format = useFormatContext();
   const parse = useParseContext();
@@ -141,7 +139,7 @@ export function TableView({
   const editingRow =
     editingRecordIndex === undefined ? undefined : display.ofRecord[editingRecordIndex];
 
-  const links = useMemo(() => linkReader(doc, index, indexVersion), [doc, index, indexVersion]);
+  const { links, formulas } = useReaders();
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual returns unstable functions by design.
   const virtualizer = useVirtualizer({
@@ -388,7 +386,10 @@ export function TableView({
   const onCopy = (e: React.ClipboardEvent, cut = false) => {
     if (e.target !== e.currentTarget || !rect) return;
     e.preventDefault();
-    e.clipboardData.setData('text/plain', toTsv(copyCells(rect, records, columnFields, links)));
+    e.clipboardData.setData(
+      'text/plain',
+      toTsv(copyCells(rect, records, columnFields, links, formulas)),
+    );
     if (cut) clearRange();
   };
 
@@ -712,6 +713,7 @@ export function TableView({
               active={panelRecord === record.id}
               format={format}
               links={links}
+              formulas={formulas}
               handlers={handlers}
               style={{ transform: top, height: rowHeight }}
             />

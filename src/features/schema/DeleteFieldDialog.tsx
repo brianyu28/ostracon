@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/components/ConfirmDialog/ConfirmDialog';
+import { compileField } from '@/domain/formulas/compile';
 import { iterateRecords } from '@/domain/model';
 import type { Id } from '@/domain/schema/types';
 import { pluralize } from '@/lib/format';
@@ -32,6 +33,14 @@ export function DeleteFieldDialog({ fieldId, onClose, onDeleted }: DeleteFieldDi
       ? `Its values in ${pluralize(count, 'record')} are removed.`
       : 'No records have a value in it.';
   }
+  // Formulas that read this field stop working (they show #ERR until edited).
+  const users = Object.values(doc.fields).filter((f) => {
+    if (f.type !== 'formula' || f.id === field.id) return false;
+    const compiled = compileField(doc.fields, f);
+    return compiled.ok && compiled.info.deps.has(field.id);
+  });
+  if (users.length)
+    consequence += ` ${users.map((f) => `“${f.name}”`).join(', ')} ${users.length > 1 ? 'use' : 'uses'} it and will show an error.`;
   return (
     <ConfirmDialog
       opened

@@ -4,7 +4,7 @@ import { memo, type CSSProperties, type ReactNode } from 'react';
 import type { FormatContext } from '@/domain/fields/model';
 import type { Field, Id, RecordEntity } from '@/domain/schema/types';
 import type { Column } from './columns';
-import type { LinkReader } from './linked';
+import type { FormulaReader, LinkReader } from './linked';
 import type { Editing } from './tableStore';
 import { TableCell, type CellHandlers } from './TableCell';
 import styles from './TableView.module.scss';
@@ -32,6 +32,7 @@ interface TableRowProps {
   active: boolean;
   format: FormatContext;
   links: LinkReader;
+  formulas: FormulaReader;
   handlers: RowHandlers;
   style: CSSProperties;
 }
@@ -49,6 +50,7 @@ export const TableRow = memo(function TableRow({
   active,
   format,
   links,
+  formulas,
   handlers,
   style,
 }: TableRowProps) {
@@ -107,6 +109,7 @@ export const TableRow = memo(function TableRow({
           }
           format={format}
           links={links}
+          formulas={formulas}
           onOpenLink={handlers.onOpenLink}
           handlers={handlers}
         />

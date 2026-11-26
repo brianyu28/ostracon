@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { formulaValue } from '@/domain/computed';
+import { formulaResultType } from '@/domain/formulas/compile';
 import { getRecord } from '@/domain/model';
 import { recordTitle } from '@/domain/records';
 import type { Field, RecordEntity, View } from '@/domain/schema/types';
@@ -29,6 +31,18 @@ export function useViewResult(view: View | undefined): ViewResult & { context: V
       today,
       weekStartsOn,
       linked: (field, id) => docStore.getState().index?.linked(field, id) ?? [],
+      formula: (record, field) => {
+        const { doc, index } = docStore.getState();
+        if (!doc) return null;
+        return formulaValue(doc, field, record, {
+          today,
+          linked: index ? (f, id) => index.linked(f, id) : undefined,
+        });
+      },
+      formulaType: (field) => {
+        const doc = docStore.getState().doc;
+        return doc ? formulaResultType(doc.fields, field) : undefined;
+      },
     }),
     [today, weekStartsOn],
   );

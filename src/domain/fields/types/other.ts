@@ -9,6 +9,7 @@ import {
   type Invalid,
 } from '../model';
 import { DATE_OPERATORS, EMPTINESS, TEXT_OPERATORS } from '../operators';
+import { normalizeNumberFormat } from './number';
 
 const TRUE_WORDS = new Set(['true', 'yes', 'y', '1', 'x', '✓', '✔', 'checked', 'on', 'done']);
 const FALSE_WORDS = new Set(['false', 'no', 'n', '0', 'unchecked', 'off']);
@@ -165,12 +166,17 @@ export const formulaType: FieldTypeDef<'formula'> = {
   label: 'Formula',
   canBePrimary: true,
   defaultConfig: () => ({ expression: '' }),
-  normalizeConfig(config) {
+  normalizeConfig(config, ctx) {
     if (!isRecordLike(config) || typeof config.expression !== 'string') return 'Invalid formula.';
-    // The expression is parsed and checked by the formula engine (Phase 7).
-    return { expression: config.expression.slice(0, 5000) };
+    // The expression itself is checked by the formula engine (domain/formulas) when saved.
+    const number =
+      config.number === undefined
+        ? undefined
+        : normalizeNumberFormat(config.number, ctx.settings.defaultCurrency);
+    if (typeof number === 'string') return number;
+    return { expression: config.expression.slice(0, 5000), ...(number ? { number } : {}) };
   },
-  // The operators of a formula follow its result type (Phase 7); text operators until then.
+  // A formula's operators and summaries follow its result type: see fields/dynamic.ts.
   operators: TEXT_OPERATORS,
   summaries: BASIC_SUMMARIES,
 };

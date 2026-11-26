@@ -9,7 +9,9 @@ import { repairView } from '../views/repair';
 import { createCollection } from './collections';
 import { CommandError, defineCommand, required, type CommandContext } from './define';
 import { createField, createLinkField, reorderFields } from './fields';
-import { uniqueFieldName } from './helpers';
+import { snapshot, uniqueFieldName } from './helpers';
+import { checkExpression, type FormulaField } from '../formulas/compile';
+import { toStored } from '../formulas/expression';
 import { createView, setViewFields, updateView } from './views';
 
 type DraftDoc = Draft<DocModel>;
@@ -148,6 +150,37 @@ export const createFromTemplate = defineCommand<{ plan: TemplatePlan }, Record<s
                 }
               : { backlink: false }),
           },
+          ctx,
+        );
+        keys.get(c.ref)?.set(f.key, fieldId);
+      }
+    }
+
+    // Formulas, once every field they can name (backlinks included) exists. One that no longer
+    // checks (a field it uses was removed in the preview) is left out.
+    for (const c of plan.collections) {
+      const collectionId = refs[c.ref] ?? '';
+      for (const f of c.fields) {
+        if (f.type !== 'formula') continue;
+        const display = typeof f.config?.expression === 'string' ? f.config.expression : '';
+        const collectionFields = Object.values(draft.fields).filter(
+          (x) => x.collectionId === collectionId,
+        );
+        const expression = toStored(display, collectionFields);
+        const probe: FormulaField = {
+          id: 'fld_templateprobe',
+          collectionId,
+          name: f.name,
+          order: 0,
+          type: 'formula',
+          config: { expression },
+          createdAt: ctx.now,
+          updatedAt: ctx.now,
+        };
+        if (!checkExpression(snapshot(draft.fields), probe, expression).ok) continue;
+        const fieldId = createField.run(
+          draft,
+          { collectionId, name: f.name, type: 'formula', config: { ...f.config, expression } },
           ctx,
         );
         keys.get(c.ref)?.set(f.key, fieldId);

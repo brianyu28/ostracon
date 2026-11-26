@@ -132,6 +132,19 @@ export function PlanFieldRow({
         }}
       />
     );
+  } else if (field.type === 'formula') {
+    control = (
+      <TextInput
+        className={styles.typeSelect}
+        classNames={{ input: styles.expression }}
+        aria-label={`${field.name || 'Field'} formula`}
+        leftSection={<FieldTypeIcon type="formula" />}
+        value={typeof field.config?.expression === 'string' ? field.config.expression : ''}
+        onChange={(e) => {
+          onChange({ ...field, config: { ...field.config, expression: e.currentTarget.value } });
+        }}
+      />
+    );
   } else {
     control = (
       <Select

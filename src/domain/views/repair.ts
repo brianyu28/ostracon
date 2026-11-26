@@ -4,7 +4,8 @@
  * type lacks, a board grouped by a field that's gone). `repairView` returns the view with those
  * references removed or replaced, or the same object when nothing needed fixing.
  */
-import { BOARD_GROUP_TYPES, CALENDAR_DATE_TYPES, fieldType } from '../fields/registry';
+import { operatorsFor, summariesFor } from '../fields/dynamic';
+import { BOARD_GROUP_TYPES, CALENDAR_DATE_TYPES } from '../fields/registry';
 import type { EntityMap } from '../model';
 import type { Field, FilterCondition, FilterGroup, Id, View } from '../schema/types';
 
@@ -19,7 +20,7 @@ function conditionValid(c: FilterCondition, fields: EntityMap<Field>, collection
   const field = fields[c.fieldId];
   if (field?.collectionId !== collectionId) return false;
   if (c.part !== undefined && field.type !== 'location') return false;
-  return Object.hasOwn(fieldType(field).operators, c.operator);
+  return Object.hasOwn(operatorsFor(field, fields), c.operator);
 }
 
 /** The filter without invalid conditions or empty nested groups (undefined when nothing is left). */
@@ -88,7 +89,7 @@ export function repairView(view: View, fields: EntityMap<Field>): View {
     const entries = Object.entries(view.summaries).filter(([id, summary]) => {
       const field = fields[id];
       return (
-        field?.collectionId === view.collectionId && fieldType(field).summaries.includes(summary)
+        field?.collectionId === view.collectionId && summariesFor(field, fields).includes(summary)
       );
     });
     if (entries.length !== Object.keys(view.summaries).length) {

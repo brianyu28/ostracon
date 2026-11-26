@@ -1,6 +1,6 @@
 /** Footer and group-header summaries over a set of records. */
 import type { Field, RecordEntity, Summary } from '../schema/types';
-import { valueSpan } from './dates';
+import { formulaOf, numberOf, spanOf } from './values';
 import { isEmpty, type ViewContext } from './filter';
 
 export type SummaryResult =
@@ -30,11 +30,11 @@ export const SUMMARY_LABELS: Readonly<Record<Summary, string>> = {
   percentChecked: 'Percent checked',
 };
 
-function numbers(records: readonly RecordEntity[], field: Field): number[] {
+function numbers(records: readonly RecordEntity[], field: Field, ctx: ViewContext): number[] {
   const out: number[] = [];
   for (const r of records) {
-    const v = r.values[field.id];
-    if (typeof v === 'number') out.push(v);
+    const v = numberOf(r, field, ctx);
+    if (v !== undefined) out.push(v);
   }
   return out;
 }
@@ -63,17 +63,19 @@ export function summarize(
         const v =
           field.type === 'link'
             ? ctx.linked(field, r.id).join(',')
-            : JSON.stringify(r.values[field.id] ?? null);
+            : field.type === 'formula'
+              ? JSON.stringify(formulaOf(r, field, ctx))
+              : JSON.stringify(r.values[field.id] ?? null);
         if (v !== '' && v !== 'null') seen.add(v);
       }
       return { kind: 'count', value: seen.size };
     }
     case 'checked':
-      return { kind: 'count', value: records.filter((r) => r.values[field.id] === true).length };
+      return { kind: 'count', value: records.filter((r) => checked(r, field, ctx)).length };
     case 'percentChecked':
       return {
         kind: 'percent',
-        value: total ? records.filter((r) => r.values[field.id] === true).length / total : 0,
+        value: total ? records.filter((r) => checked(r, field, ctx)).length / total : 0,
       };
     case 'sum':
     case 'average':
@@ -81,8 +83,8 @@ export function summarize(
     case 'min':
     case 'max':
     case 'range': {
-      if (valueSpanField(field)) return dateSummary(summary, records, field);
-      const ns = numbers(records, field);
+      if (valueSpanField(field, ctx)) return dateSummary(summary, records, field, ctx);
+      const ns = numbers(records, field, ctx);
       if (ns.length === 0) return { kind: 'none' };
       if (summary === 'sum') return { kind: 'value', value: ns.reduce((a, b) => a + b, 0) };
       if (summary === 'average')
@@ -104,11 +106,12 @@ export function summarize(
     }
     case 'earliest':
     case 'latest':
-      return dateSummary(summary, records, field);
+      return dateSummary(summary, records, field, ctx);
   }
 }
 
-function valueSpanField(field: Field): boolean {
+function valueSpanField(field: Field, ctx: ViewContext): boolean {
+  if (field.type === 'formula') return ctx.formulaType?.(field) === 'date';
   return ['date', 'dateTime', 'dateRange', 'createdTime', 'modifiedTime'].includes(field.type);
 }
 
@@ -116,11 +119,12 @@ function dateSummary(
   summary: Summary,
   records: readonly RecordEntity[],
   field: Field,
+  ctx: ViewContext,
 ): SummaryResult {
   let start: string | undefined;
   let end: string | undefined;
   for (const r of records) {
-    const span = valueSpan(r, field);
+    const span = spanOf(r, field, ctx);
     if (!span) continue;
     if (start === undefined || span.start < start) start = span.start;
     if (end === undefined || span.end > end) end = span.end;
@@ -129,4 +133,10 @@ function dateSummary(
   if (summary === 'earliest') return { kind: 'dates', start, end: start };
   if (summary === 'latest') return { kind: 'dates', start: end, end };
   return { kind: 'dates', start, end };
+}
+
+function checked(record: RecordEntity, field: Field, ctx: ViewContext): boolean {
+  return field.type === 'formula'
+    ? formulaOf(record, field, ctx) === true
+    : record.values[field.id] === true;
 }

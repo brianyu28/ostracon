@@ -6,7 +6,7 @@ import { fieldType } from '@/domain/fields/registry';
 import { RAW_FORMAT } from '@/domain/fields/model';
 import type { TextRow } from '@/domain/commands';
 import type { Field, Id, RecordEntity, Value } from '@/domain/schema/types';
-import type { LinkReader } from './linked';
+import type { FormulaReader, LinkReader } from './linked';
 import type { CellRef } from './tableStore';
 
 export interface Rect {
@@ -45,7 +45,13 @@ export function isEditable(field: Field): boolean {
 }
 
 /** Text of a value for the clipboard: canonical text that pasting reads back. */
-export function clipboardText(record: RecordEntity, field: Field, links: LinkReader): string {
+export function clipboardText(
+  record: RecordEntity,
+  field: Field,
+  links: LinkReader,
+  formulas?: FormulaReader,
+): string {
+  if (field.type === 'formula') return formulas?.(record, field).text ?? '';
   if (field.type === 'link')
     return links(record, field)
       .map((l) => l.title)
@@ -62,12 +68,17 @@ export function copyCells(
   rows: readonly RecordEntity[],
   columns: readonly Field[],
   links: LinkReader,
+  formulas?: FormulaReader,
 ): string[][] {
   const out: string[][] = [];
   for (let r = rect.top; r <= rect.bottom; r++) {
     const record = rows[r];
     if (!record) continue;
-    out.push(columns.slice(rect.left, rect.right + 1).map((f) => clipboardText(record, f, links)));
+    out.push(
+      columns
+        .slice(rect.left, rect.right + 1)
+        .map((f) => clipboardText(record, f, links, formulas)),
+    );
   }
   return out;
 }

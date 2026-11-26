@@ -1,14 +1,17 @@
 import { ActionIcon } from '@mantine/core';
 import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { routes, type AppRoute } from '@/app/routes';
+import { AppLogo } from '@/components/AppLogo/AppLogo';
 import { usePrefs } from '@/store/prefsStore';
 import { NavItem } from './NavItem';
 import { SidebarCollections } from './SidebarCollections';
 import styles from './Sidebar.module.scss';
 
 const visible = routes.filter((r) => !r.hidden);
-const top = visible.filter((r) => r.path !== '/settings');
-const bottom = visible.filter((r) => r.path === '/settings');
+/** Help and Settings sit at the bottom of the sidebar. */
+const BOTTOM = ['/help', '/settings'];
+const top = visible.filter((r) => !BOTTOM.includes(r.path));
+const bottom = visible.filter((r) => BOTTOM.includes(r.path));
 
 function RouteItem({ route }: { route: AppRoute }) {
   const Icon = route.icon;
@@ -38,7 +41,7 @@ export function Sidebar() {
   return (
     <nav className={styles.root} aria-label="Main" data-collapsed={collapsed || undefined}>
       <div className={styles.brand}>
-        <img src="favicon.svg" alt="" className={styles.logo} />
+        <AppLogo size={22} className={styles.logo} />
         <span className={styles.name}>Ostracon</span>
       </div>
       <div className={styles.items}>

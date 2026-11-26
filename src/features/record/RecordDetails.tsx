@@ -15,6 +15,7 @@ import { useParseContext } from '@/hooks/useParseContext';
 import { mapsUrl } from '@/lib/maps';
 import { useDocStore } from '@/store/docStore';
 import { applyEdit } from '@/features/table/applyEdit';
+import { useReaders } from '@/features/table/useReaders';
 import { CellValue } from '@/features/table/cells/CellValue';
 import { timestampText } from '@/features/table/cells/timestamp';
 import { hasEditor } from '@/features/table/editors/hasEditor';
@@ -36,6 +37,7 @@ export function RecordDetails({ record, variant }: RecordDetailsProps) {
   const format = useFormatContext();
   const parse = useParseContext();
   const [editing, setEditing] = useState<Id | null>(null);
+  const { formulas } = useReaders();
   if (!doc) return null;
   const collection = doc.collections[record.collectionId];
   if (!collection) return null;
@@ -108,6 +110,7 @@ export function RecordDetails({ record, variant }: RecordDetailsProps) {
           field={field}
           format={format}
           wrap
+          {...(field.type === 'formula' ? { formula: formulas(record, field) } : {})}
           {...(field.type === 'checkbox' || field.type === 'rating'
             ? {
                 onSet: (v: unknown) => {

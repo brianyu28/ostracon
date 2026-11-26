@@ -54,7 +54,7 @@ function sourceValue(
     const titles = linksOf(doc, field, recordId, reader)
       .map((id) => getRecord(doc, target, id))
       .filter((r) => r !== undefined)
-      .map((r) => recordTitle(doc, r));
+      .map((r) => recordTitle(doc as DocModel, r));
     return { value: null, text: titles.join(', ') };
   }
   const record = getRecord(doc, field.collectionId, recordId);

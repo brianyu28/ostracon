@@ -8,6 +8,7 @@ import type { Field, LocationValue, View } from '@/domain/schema/types';
 import type { RecordGroup } from '@/domain/views/groups';
 import { formatDate } from '@/lib/date';
 import { useDocStore } from '@/store/docStore';
+import { useReaders } from './useReaders';
 import styles from './TableView.module.scss';
 
 interface GroupLabelProps {
@@ -20,6 +21,7 @@ interface GroupLabelProps {
 /** What a group is: option chips, linked titles, a date bucket or the shared value. */
 export function GroupLabel({ field, group, setting, format }: GroupLabelProps) {
   const doc = useDocStore((s) => s.doc);
+  const { formulas } = useReaders();
   const { key } = group;
   if (field.type === 'checkbox') return <span>{key === 'true' ? 'Checked' : 'Unchecked'}</span>;
   if (key === '') return <span className={styles.groupEmpty}>No {field.name.toLowerCase()}</span>;
@@ -61,6 +63,14 @@ export function GroupLabel({ field, group, setting, format }: GroupLabelProps) {
     case 'createdTime':
     case 'modifiedTime':
       return <span>{dateLabel(key, setting.dateBucket, format.locale)}</span>;
+    case 'formula': {
+      const sample = group.records[0];
+      if (key.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(key))
+        return <span>{dateLabel(key, setting.dateBucket, format.locale)}</span>;
+      if (/^\d{4}(-\d{2})?$/.test(key) && setting.dateBucket)
+        return <span>{dateLabel(key, setting.dateBucket, format.locale)}</span>;
+      return <span>{sample ? formulas(sample, field).text || key : key}</span>;
+    }
     case 'location': {
       const v = group.records[0]?.values[field.id] as LocationValue | undefined;
       return <span>{v ? (setting.part ? v[setting.part] : locationText(v)) : key}</span>;

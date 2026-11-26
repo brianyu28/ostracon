@@ -1,7 +1,8 @@
 import { Menu, UnstyledButton } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
 import type { FormatContext } from '@/domain/fields/model';
-import { fieldType } from '@/domain/fields/registry';
+import { summariesFor } from '@/domain/fields/dynamic';
+import { useDocStore } from '@/store/docStore';
 import type { RecordEntity, Summary, View } from '@/domain/schema/types';
 import type { ViewContext } from '@/domain/views/filter';
 import { summarize, SUMMARY_LABELS } from '@/domain/views/summaries';
@@ -23,6 +24,7 @@ interface SummaryRowProps {
 /** The sticky footer: a summary per column, chosen from the column's menu. */
 export function SummaryRow({ view, columns, width, records, context, format }: SummaryRowProps) {
   const summaries = view.summaries ?? {};
+  const fieldsMap = useDocStore((s) => s.doc?.fields);
   const set = (fieldId: string, summary: Summary | null) => {
     const next = { ...summaries };
     if (summary) next[fieldId] = summary;
@@ -38,7 +40,7 @@ export function SummaryRow({ view, columns, width, records, context, format }: S
       {columns.map((column) => {
         const { field } = column;
         const current = summaries[field.id];
-        const options = fieldType(field).summaries;
+        const options = fieldsMap ? summariesFor(field, fieldsMap) : [];
         return (
           <Menu key={field.id} position="top-start" withinPortal>
             <Menu.Target>

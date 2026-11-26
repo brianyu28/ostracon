@@ -67,3 +67,83 @@
   justify-content: space-between;
   gap: $space-1;
 }
+
+.formula {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.formulaLabel {
+  font-size: $font-sm;
+  font-weight: 500;
+}
+
+.formulaInput {
+  width: 100%;
+  padding: 6px $space-2;
+  font-family: var(--os-font-mono);
+  font-size: $font-sm;
+  line-height: 1.5;
+  color: var(--os-text);
+  resize: vertical;
+  background: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: $radius-sm;
+  outline: none;
+
+  &:focus {
+    border-color: var(--os-accent);
+  }
+}
+
+.formulaInvalid,
+.formulaInvalid:focus {
+  border-color: var(--os-negative);
+}
+
+.suggestions {
+  max-height: 220px;
+  padding: $space-1;
+  overflow-y: auto;
+  background: var(--os-bg);
+  border: 1px solid var(--os-border);
+  border-radius: $radius-sm;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
+}
+
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 2px $space-1;
+  font-size: $font-sm;
+  cursor: pointer;
+  border-radius: $radius-sm;
+}
+
+.suggestionActive {
+  background: var(--os-surface-hover);
+}
+
+.suggestionLabel {
+  font-family: var(--os-font-mono);
+  white-space: nowrap;
+}
+
+.suggestionDetail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--os-text-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fx {
+  width: 14px;
+  font-style: italic;
+  color: var(--os-accent);
+  text-align: center;
+}

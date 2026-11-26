@@ -163,7 +163,7 @@ export function FieldConfigEditor(props: FieldConfigEditorProps) {
   }
 }
 
-function NumberFormatEditor({ config, onChange, format }: FieldConfigEditorProps) {
+export function NumberFormatEditor({ config, onChange, format }: FieldConfigEditorProps) {
   const style = (config.style as NumberFormat['style'] | undefined) ?? 'plain';
   const set = (patch: ConfigDraft) => {
     const next = { ...config, ...patch };

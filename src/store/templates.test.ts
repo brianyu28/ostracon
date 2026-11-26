@@ -35,7 +35,7 @@ describe('template catalog', () => {
         expect(new Set(keys).size, `${t.key}: duplicate keys`).toBe(keys.length);
         expect(keys, `${t.key}: primary`).toContain(c.primary);
         for (const f of c.fields) {
-          if (f.type === 'link' || !f.config) continue;
+          if (f.type === 'link' || f.type === 'formula' || !f.config) continue;
           const result = fieldType(f.type).normalizeConfig(f.config, settingsCtx());
           expect(typeof result, `${t.key}.${f.key}`).not.toBe('string');
         }
@@ -54,6 +54,14 @@ describe('template catalog', () => {
         const plan = planTemplate(t, { withLog, existing: [] });
         const refs = store.getState().dispatch('createFromTemplate', { plan });
         expect(Object.keys(refs)).toEqual(plan.collections.map((c) => c.ref));
+        // Every formula in the plan checks and is created.
+        for (const c of plan.collections) {
+          const planned = c.fields.filter((f) => f.type === 'formula').map((f) => f.name);
+          const made = fieldsOf(refs[c.ref]!)
+            .filter((f) => f.type === 'formula')
+            .map((f) => f.name);
+          expect(made, `${t.key}/${c.ref}`).toEqual(planned);
+        }
         expectIntact();
         store.getState().undo();
         expect(Object.keys(doc().collections)).toHaveLength(0);
@@ -120,6 +128,7 @@ describe('planning', () => {
       'Status',
       'Started',
       'Finished',
+      'Days to read',
       'Rating',
       'Format',
       'Pages',

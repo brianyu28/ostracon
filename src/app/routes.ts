@@ -1,4 +1,4 @@
-import { IconHome, IconSettings, type Icon } from '@tabler/icons-react';
+import { IconHelp, IconHome, IconSettings, type Icon } from '@tabler/icons-react';
 import { lazy, type ComponentType } from 'react';
 
 // Screens load on demand, keeping the initial bundle small.
@@ -10,6 +10,9 @@ const CollectionPage = lazy(() =>
 );
 const RecordPage = lazy(() =>
   import('@/features/record/RecordPage').then((m) => ({ default: m.RecordPage })),
+);
+const HelpPage = lazy(() =>
+  import('@/features/help/HelpPage').then((m) => ({ default: m.HelpPage })),
 );
 const SettingsPage = lazy(() =>
   import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
@@ -58,6 +61,14 @@ export const routes: readonly AppRoute[] = [
     component: RecordPage,
     match: '/c/:collectionId/r/:recordId',
     hidden: true,
+  },
+  {
+    path: '/help',
+    title: 'Help',
+    icon: IconHelp,
+    component: HelpPage,
+    standalone: true,
+    primary: true,
   },
   {
     path: '/settings',

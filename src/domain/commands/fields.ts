@@ -1,6 +1,7 @@
 /** Field commands: create (including link pairs), edit, retype, reorder, delete. */
 import { original, type Draft } from 'immer';
 import { planTypeChange } from '../fields/convert';
+import { checkExpression, type FormulaField } from '../formulas/compile';
 import { fieldType } from '../fields/registry';
 import { INVALID, type ConfigContext } from '../fields/model';
 import { canonicalFieldId, linksOf, rekeyLinks, storedLinkKey, type LinkField } from '../links';
@@ -22,6 +23,7 @@ import {
   orderAfter,
   removeLinksOfFields,
   repairViews,
+  snapshot,
   uniqueFieldName,
 } from './helpers';
 
@@ -76,6 +78,7 @@ export const createField = defineCommand<NewField, Id>({
       config,
     );
     draft.fields[field.id] = field;
+    checkFormula(draft, field.id);
     addFieldToViews(draft, field, ctx.now, input);
     return field.id;
   },
@@ -230,6 +233,7 @@ export const updateField = defineCommand<{ id: Id; changes: FieldChanges }>({
         const config = fieldType(field).normalizeConfig(changes.config, cctx);
         if (typeof config === 'string') throw new CommandError(config);
         (field as { config?: unknown }).config = config;
+        checkFormula(draft, field.id);
         revalidateValues(draft, field);
       }
       repairViews(draft, field.collectionId, ctx.now);
@@ -276,6 +280,7 @@ export const changeFieldType = defineCommand<
       }
     }
     draft.fields[id] = { ...plan.field, updatedAt: ctx.now };
+    checkFormula(draft, id);
     if (changes) applyBasicChanges(draft, draft.fields[id], changes);
     for (const [recordId, value] of plan.values) {
       const record = getRecord(draft, before.collectionId, recordId);
@@ -287,6 +292,15 @@ export const changeFieldType = defineCommand<
     return { converted: plan.converted, lost: plan.lost };
   },
 });
+
+/** Rejects a formula field whose expression doesn't check (syntax, types, unknown fields, cycles). */
+function checkFormula(draft: Draft<DocModel>, id: Id): void {
+  const field = draft.fields[id];
+  if (field?.type !== 'formula') return;
+  const fields = snapshot(draft.fields);
+  const result = checkExpression(fields, fields[id] as FormulaField, field.config.expression);
+  if (!result.ok) throw new CommandError(`Formula: ${result.error.message}`);
+}
 
 /** Sets the order of a collection's fields to the given id order. */
 export const reorderFields = defineCommand<{ collectionId: Id; ids: readonly Id[] }>({

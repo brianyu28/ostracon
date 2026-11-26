@@ -10,6 +10,7 @@ import type { Field, LocationValue, RecordEntity, View } from '../schema/types';
 import { compileFilter, type ViewContext } from './filter';
 import { groupRecords, type RecordGroup } from './groups';
 import { sortRecords } from './rows';
+import { formulaOf } from './values';
 
 export interface ViewResult {
   /** Matching records in order (all groups, collapsed ones included). */
@@ -28,6 +29,10 @@ export interface EvaluateOptions extends ViewContext {
 
 function searchText(record: RecordEntity, field: Field, options: EvaluateOptions): string {
   if (field.type === 'link') return options.linkTitles?.(record, field).join(' ') ?? '';
+  if (field.type === 'formula') {
+    const v = formulaOf(record, field, options);
+    return v === null ? '' : String(v);
+  }
   const v = record.values[field.id];
   if (v === undefined) return '';
   if (field.type === 'location') return locationText(v as LocationValue);
@@ -47,7 +52,7 @@ export function evaluateView(doc: DocModel, view: View, options: EvaluateOptions
       continue;
     records.push(record);
   }
-  sortRecords(records, view.sorts, doc.fields);
+  sortRecords(records, view.sorts, doc.fields, options);
   const groupField = view.group ? doc.fields[view.group.fieldId] : undefined;
   if (!view.group || !groupField) return { records };
   const groups = groupRecords(records, groupField, view.group, options);
