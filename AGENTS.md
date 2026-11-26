@@ -67,10 +67,10 @@ Other single sources of truth:
   its field type's definition (`src/domain/fields/`): `normalize` on input, `format` for text.
   Links between records live in the document's `links` table, never on records.
 - **UI mutates data only through named store commands** (they power undo/redo).
-- **Schema changes**: until the first web deployment, v1 is edited in place (no migration;
-  regenerate `fixtures/v1.json` with `pnpm gen:demo`). After deployment they need a migration:
-  bump the schema version, add a single-step migration and a fixture, and keep older fixtures migrating cleanly (see
-  `src/domain/schema/migrations/index.ts`). The only schema module is
+- **Schema changes need a migration**: v1 is deployed and real files exist, so never edit a
+  released schema in place. Bump the schema version, add a single-step migration and a fixture,
+  and keep older fixtures migrating cleanly (see `src/domain/schema/migrations/index.ts`).
+  Existing fixtures are frozen: never regenerate or edit them. The only schema module is
   `src/domain/schema/current.ts`; old versions exist as fixtures. Fixtures are generated with
   `pnpm gen:demo` and must not be hand-formatted.
 - **Access records and links through the helpers in `src/domain/model.ts`** (`getRecord`,
