@@ -48,6 +48,7 @@ src/
     fields/       Field type registry (one definition per type), operators, formatting, type changes
     links.ts      Link pairs: canonical storage, keys, lookups
     records.ts    Record titles and value text
+    templates/    Template catalog (data), planning a template into an editable plan
     views/        View repair (keeping views consistent with their fields), row order (rows.ts)
     commands/     Every document mutation, as a named command
     aggregates/   DocIndex (incremental indexes: record counts, link sides)
@@ -451,6 +452,10 @@ field). It also requires **Trusted Types**: code-loading sinks accept only value
 
 **Add a screen.** Add a route in `app/routes.ts` and a page in `features/<name>/`. Add a `go to`
 keyboard command in the catalog if it deserves one.
+
+**Add a template.** Add an entry to `domain/templates/catalog.ts` (fields by key, links to other
+templates by key, starter views); the gallery, preview and `createFromTemplate` read it. The
+catalog test checks every config and creates every template.
 
 **Add a field type.** Add `FieldType` to the schema (`current.ts`, a schema change), write its
 definition in `fields/types/`, register it in `fields/registry.ts` (and `FIELD_TYPE_ORDER`),

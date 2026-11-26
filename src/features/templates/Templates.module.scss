@@ -1,0 +1,119 @@
+@use '@/styles/tokens' as *;
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: $space-1;
+  max-height: 340px;
+  overflow-y: auto;
+
+  @include phone {
+    max-height: none;
+  }
+}
+
+.tile {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  padding: $space-2;
+  border: 1px solid var(--os-border);
+  border-radius: $radius-md;
+
+  &:hover {
+    background: var(--os-surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--os-accent);
+  }
+}
+
+.tileText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tileName {
+  font-weight: 600;
+}
+
+.tileDescription {
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+}
+
+.none {
+  padding: $space-2;
+  color: var(--os-text-faint);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  padding: $space-2;
+  border: 1px solid var(--os-border);
+  border-radius: $radius-md;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.collectionName {
+  flex: 1;
+
+  input {
+    font-weight: 600;
+  }
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+}
+
+.fieldName {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.typeSelect {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.cardFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-1;
+}
+
+.views {
+  text-align: right;
+}

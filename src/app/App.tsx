@@ -58,12 +58,13 @@ export function App({ children }: AppProps) {
         </Switch>
         <GlobalCommands />
         <ShortcutHelp />
+        {/* Inside the router: creating a collection navigates to it. */}
+        <SchemaDialogs />
       </Router>
       <ConflictDialog />
       <UnlockDialog />
       <UnencryptedCopyDialog />
       <DropboxDialog />
-      <SchemaDialogs />
       <CommandPalette />
       <Toaster />
       <PrefsEffects />

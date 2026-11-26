@@ -28,6 +28,7 @@ import {
   setRecordValues,
 } from './records';
 import { updateSettings } from './settings';
+import { createFromTemplate } from './templates';
 import {
   createView,
   deleteView,
@@ -69,6 +70,7 @@ export const commands = {
   addLinks,
   removeLinks,
   updateSettings,
+  createFromTemplate,
 };
 
 export type Commands = typeof commands;
