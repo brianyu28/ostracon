@@ -18,6 +18,10 @@
  * - Links are stored once, in `links`, never on records (see `domain/links.ts`).
  */
 import { z } from 'zod';
+
+// No compiled validators: they need `new Function`, which the CSP's Trusted Types forbid (zod's
+// probe for it would log a violation).
+z.config({ jitless: true });
 import { CURRENT_SCHEMA_VERSION, FILE_FORMAT } from './version';
 
 // ── Primitives ───────────────────────────────────────────────────────────────

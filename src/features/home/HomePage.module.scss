@@ -75,3 +75,58 @@
   font-size: $font-sm;
   color: var(--os-text-dim);
 }
+
+.lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: $space-4;
+  margin-top: $space-3;
+
+  @include phone {
+    grid-template-columns: 1fr;
+  }
+}
+
+.subtitle {
+  margin: 0 0 $space-1;
+  font-size: $font-md;
+  font-weight: 600;
+  color: var(--os-text-dim);
+}
+
+.rows {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  min-height: 30px;
+  padding: 0 $space-1;
+  color: inherit;
+  text-decoration: none;
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: var(--os-surface-hover);
+  }
+}
+
+.rowTitle {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowDetail {
+  flex: none;
+  margin-left: auto;
+  font-size: $font-sm;
+  color: var(--os-text-faint);
+  white-space: nowrap;
+}

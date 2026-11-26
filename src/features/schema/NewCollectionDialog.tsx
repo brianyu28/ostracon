@@ -1,5 +1,5 @@
 import { ActionIcon, Button, Divider, Group, Modal, TextInput } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
+import { IconArrowLeft, IconFileImport } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { collectionPath } from '@/app/routes';
@@ -12,7 +12,7 @@ import { TemplateGallery } from '@/features/templates/TemplateGallery';
 import { TemplatePreview } from '@/features/templates/TemplatePreview';
 import { tryDispatch } from '@/store/actions';
 import { docStore, useDocStore } from '@/store/docStore';
-import { uiStore, useUi } from '@/store/uiStore';
+import { ui, uiStore, useUi } from '@/store/uiStore';
 import styles from './CollectionSettingsDialog.module.scss';
 
 type Step =
@@ -125,6 +125,19 @@ export function NewCollectionDialog() {
               </Button>
             </div>
           </form>
+          <Button
+            variant="subtle"
+            color="gray"
+            size="xs"
+            mt="xs"
+            leftSection={<IconFileImport size={14} />}
+            onClick={() => {
+              close();
+              ui.openImport();
+            }}
+          >
+            Import a CSV file instead
+          </Button>
           <Divider my="md" label="Or start from a template" labelPosition="left" />
           <TemplateGallery
             collections={existing}

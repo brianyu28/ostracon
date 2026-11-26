@@ -219,7 +219,19 @@ export function HelpPage() {
               tab.
             </li>
             <li>
-              Undo (<Kbd>⌘Z</Kbd>) covers every change, including deletes.
+              Undo (<Kbd>⌘Z</Kbd>) covers every change, including deletes and imports.
+            </li>
+            <li>
+              <b>Search</b> every collection with <Kbd>⌘P</Kbd> or <Kbd>/</Kbd>; start with{' '}
+              <Kbd>&gt;</Kbd> for commands.
+            </li>
+            <li>
+              <b>Import</b> a CSV from a collection’s menu (or New collection): columns map to
+              fields, new fields get a guessed type, link columns match titles.
+            </li>
+            <li>
+              <b>Export</b> a view as CSV or a collection as JSON from its menu; the whole file as
+              plain JSON from the file menu. Exports are never encrypted.
             </li>
           </ul>
         </section>

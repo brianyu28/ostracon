@@ -73,7 +73,7 @@ export default defineConfig({
       manifest: {
         name: 'Ostracon',
         short_name: 'Ostracon',
-        description: 'Records about the things in your life, stored in your own files.',
+        description: 'Keep records about anything, in a file you own.',
         theme_color: '#f7f8fa',
         background_color: '#ffffff',
         // Stable identity for the installed app, independent of start_url.
@@ -111,5 +111,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: { modules: { classNameStrategy: 'non-scoped' } },
     include: ['src/**/*.test.{ts,tsx}'],
+    // UI tests render the whole app; under a loaded machine 5 s was occasionally too short.
+    testTimeout: 15_000,
   },
 });

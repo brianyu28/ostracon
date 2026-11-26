@@ -27,6 +27,7 @@ import {
   setFromText,
   setRecordValues,
 } from './records';
+import { importRecords } from './import';
 import { updateSettings } from './settings';
 import { createFromTemplate } from './templates';
 import {
@@ -73,6 +74,7 @@ export const commands = {
   removeLinks,
   updateSettings,
   createFromTemplate,
+  importRecords,
 };
 
 export type Commands = typeof commands;
@@ -84,4 +86,5 @@ export { CommandError, type CommandContext } from './define';
 export type { CollectionChanges } from './collections';
 export type { FieldChanges, NewField, NewLinkField } from './fields';
 export type { NewRecord, TextResult, TextRow } from './records';
+export type { ImportColumn, ImportInput, ImportResult } from './import';
 export type { ViewChanges } from './views';

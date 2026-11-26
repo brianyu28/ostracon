@@ -2,7 +2,10 @@ import { ActionIcon, Button, Menu } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import {
   IconColumnInsertRight,
+  IconBraces,
   IconDots,
+  IconFileExport,
+  IconFileImport,
   IconLayoutSidebarRight,
   IconPlus,
   IconSettings,
@@ -31,6 +34,7 @@ import { ViewTabs } from '@/features/views/ViewTabs';
 import { ViewToolbar } from '@/features/views/ViewToolbar';
 import { ui } from '@/store/uiStore';
 import { BulkBar } from './BulkBar';
+import { exportCollectionJson, exportViewCsv } from '@/features/export/exporters';
 import { RecordList } from './RecordList';
 import { BoardView } from '@/features/board/BoardView';
 import { CalendarView } from '@/features/calendar/CalendarView';
@@ -183,6 +187,31 @@ export function CollectionPage() {
           <Menu.Item leftSection={<IconColumnInsertRight size={14} />} onClick={addField}>
             Add field…
           </Menu.Item>
+          <Menu.Item
+            leftSection={<IconFileImport size={14} />}
+            onClick={() => {
+              ui.openImport(collection.id);
+            }}
+          >
+            Import CSV…
+          </Menu.Item>
+          <Menu.Item
+            leftSection={<IconFileExport size={14} />}
+            onClick={() => {
+              exportViewCsv(collection, view, result.records);
+            }}
+          >
+            Export view as CSV
+          </Menu.Item>
+          <Menu.Item
+            leftSection={<IconBraces size={14} />}
+            onClick={() => {
+              exportCollectionJson(collection);
+            }}
+          >
+            Export collection as JSON
+          </Menu.Item>
+          <Menu.Divider />
           <Menu.Item
             leftSection={<IconSettings size={14} />}
             onClick={() => {

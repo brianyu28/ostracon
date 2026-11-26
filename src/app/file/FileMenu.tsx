@@ -121,6 +121,16 @@ export function FileMenu() {
           >
             New file
           </Menu.Item>
+          <Menu.Item
+            leftSection={<IconFileExport size={14} />}
+            onClick={() => {
+              void import('@/features/export/exporters').then((m) => {
+                m.exportDocumentJson();
+              });
+            }}
+          >
+            Export as plain JSON
+          </Menu.Item>
           <Menu.Divider />
           <Menu.Item
             leftSection={<IconX size={14} />}

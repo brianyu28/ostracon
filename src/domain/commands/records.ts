@@ -3,7 +3,7 @@ import { original, type Draft } from 'immer';
 import { fieldType } from '../fields/registry';
 import { INVALID, type ParseContext } from '../fields/model';
 import { normalizeOptions, optionByName, splitMulti } from '../fields/types/select';
-import { linksOf, storedLinkKey, type LinkField } from '../links';
+import { linksOf, linkTimestamp, storedLinkKey, type LinkField } from '../links';
 import {
   getRecord,
   iterateRecords,
@@ -204,7 +204,9 @@ export const setFromText = defineCommand<
       let record: Draft<RecordEntity> | undefined;
       if (row.id === undefined) {
         const id = newId('record');
-        putRecord(draft, { id, collectionId, values: {}, createdAt: now, updatedAt: now });
+        // Rows added together keep their order (creation time breaks ties in views).
+        const at = linkTimestamp(now, result.created.length);
+        putRecord(draft, { id, collectionId, values: {}, createdAt: at, updatedAt: at });
         result.created.push(id);
         record = getRecord(draft, collectionId, id);
       } else {

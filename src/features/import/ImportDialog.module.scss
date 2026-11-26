@@ -1,0 +1,81 @@
+@use '@/styles/tokens' as *;
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.or {
+  font-size: $font-sm;
+  color: var(--os-text-faint);
+}
+
+.paste {
+  font-family: var(--os-font-mono);
+  font-size: $font-sm;
+}
+
+.columns {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  max-height: 55vh;
+  overflow-y: auto;
+
+  @include phone {
+    max-height: none;
+  }
+}
+
+.column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: $space-1 $space-3;
+  align-items: center;
+  padding: $space-1 $space-2;
+  border: 1px solid var(--os-border);
+  border-radius: $radius-sm;
+
+  @include phone {
+    grid-template-columns: 1fr;
+  }
+}
+
+.columnHead {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.columnName {
+  font-weight: 600;
+}
+
+.samples {
+  overflow: hidden;
+  font-size: $font-xs;
+  color: var(--os-text-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.columnControls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-1;
+
+  @include phone {
+    grid-template-columns: 1fr 1fr;
+
+    > :first-child {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.problem {
+  grid-column: 1 / -1;
+  font-size: $font-xs;
+  color: var(--os-warning);
+}

@@ -36,6 +36,7 @@ export const COMMANDS = [
     allowInInputs: true,
   },
   { id: 'app.help', title: 'Keyboard shortcuts', group: 'General', keys: ['?'] },
+  { id: 'app.search', title: 'Search records', group: 'General', keys: ['mod+p', '/'] },
   { id: 'app.toggleSidebar', title: 'Toggle sidebar', group: 'General', keys: ['mod+\\'] },
   // Navigation
   { id: 'nav.home', title: 'Go to Home', group: 'Navigation', keys: ['g h'] },

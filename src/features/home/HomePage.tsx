@@ -6,12 +6,10 @@ import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
 import { pluralize } from '@/lib/format';
 import { useDocStore } from '@/store/docStore';
 import { ui } from '@/store/uiStore';
+import { HomeLists } from './HomeLists';
 import styles from './HomePage.module.scss';
 
-/**
- * The open document's collections. (Phase 10 adds recently edited records and
- * "On this day".)
- */
+/** The open document's collections, recently edited records and "On this day". */
 export function HomePage() {
   const collections = useDocStore((s) => s.doc?.collections);
   const index = useDocStore((s) => s.index);
@@ -47,6 +45,7 @@ export function HomePage() {
           ))}
         </div>
       )}
+      {list.length > 0 && <HomeLists />}
     </div>
   );
 }

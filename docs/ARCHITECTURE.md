@@ -50,6 +50,8 @@ src/
     records.ts    Record titles and value text
     formulas/     Formula tokenizer, parser, type checker, functions, evaluator, compile cache
     computed.ts   Formula values per record (cached), the computed-value layer
+    home.ts       Recently edited, "on this day" and the record search index
+    import.ts     Guessing a new field's type from a CSV column
     templates/    Template catalog (data), planning a template into an editable plan
     views/        View repair (keeping views consistent with their fields), row order (rows.ts)
     commands/     Every document mutation, as a named command

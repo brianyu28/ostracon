@@ -52,6 +52,11 @@ export function GlobalCommands() {
         uiStore.setState({ paletteOpen: true, helpOpen: false });
       },
     },
+    'app.search': {
+      run: () => {
+        uiStore.setState({ searchOpen: true, paletteOpen: false, helpOpen: false });
+      },
+    },
     'app.help': {
       run: () => {
         uiStore.setState({ helpOpen: true, paletteOpen: false });

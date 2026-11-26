@@ -16,21 +16,26 @@ export interface FieldEditorTarget {
 
 interface UiState {
   paletteOpen: boolean;
+  searchOpen: boolean;
   helpOpen: boolean;
   /** Dropbox file dialog: choosing a file to open, or naming a file to save. */
   dropboxDialog: 'open' | 'save' | null;
   newCollectionOpen: boolean;
   collectionSettings: { collectionId: Id; tab: CollectionSettingsTab } | null;
   fieldEditor: FieldEditorTarget | null;
+  /** CSV import: into a collection, or into a new one (collectionId absent). */
+  importing: { collectionId?: Id } | null;
 }
 
 export const uiStore = createStore<UiState>()(() => ({
   paletteOpen: false,
+  searchOpen: false,
   helpOpen: false,
   dropboxDialog: null,
   newCollectionOpen: false,
   collectionSettings: null,
   fieldEditor: null,
+  importing: null,
 }));
 
 export function useUi<T>(selector: (s: UiState) => T): T {
@@ -43,6 +48,9 @@ export const ui = {
   },
   openCollectionSettings: (collectionId: Id, tab: CollectionSettingsTab = 'general') => {
     uiStore.setState({ collectionSettings: { collectionId, tab } });
+  },
+  openImport: (collectionId?: Id) => {
+    uiStore.setState({ importing: collectionId ? { collectionId } : {} });
   },
   openFieldEditor: (target: FieldEditorTarget) => {
     uiStore.setState({ fieldEditor: target });

@@ -12,6 +12,7 @@ import { UnencryptedCopyDialog } from './file/UnencryptedCopyDialog';
 import { UnlockDialog } from './file/UnlockDialog';
 import { DropboxDialog } from './file/DropboxDialog';
 import { SchemaDialogs } from '@/features/schema/SchemaDialogs';
+import { SearchDialog } from '@/features/search/SearchDialog';
 import { PrefsEffects } from './PrefsEffects';
 import { DocumentGate } from './file/DocumentGate';
 import { AppLayout } from './layout/AppLayout';
@@ -60,6 +61,7 @@ export function App({ children }: AppProps) {
         <ShortcutHelp />
         {/* Inside the router: creating a collection navigates to it. */}
         <SchemaDialogs />
+        <SearchDialog />
       </Router>
       <ConflictDialog />
       <UnlockDialog />
