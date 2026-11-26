@@ -35,14 +35,19 @@ export function BulkBar({ collectionId, ids }: BulkBarProps) {
   const apply = (field: Field, change: EditorChange | null) => {
     setSetting(null);
     if (!change) return;
-    const ok =
-      change.kind === 'value'
-        ? tryRun('setFieldValue', { collectionId, ids, fieldId: field.id, value: change.value })
-        : tryDispatch('setFromText', {
-            collectionId,
-            rows: ids.map((id) => ({ id, texts: { [field.id]: change.text } })),
-            parse,
-          }) !== undefined;
+    let ok = false;
+    if (change.kind === 'value' || change.kind === 'links') {
+      const value = change.kind === 'value' ? change.value : change.ids;
+      ok = tryRun('setFieldValue', { collectionId, ids, fieldId: field.id, value });
+    } else if (change.kind === 'text') {
+      const { text } = change;
+      ok =
+        tryDispatch('setFromText', {
+          collectionId,
+          rows: ids.map((id) => ({ id, texts: { [field.id]: text } })),
+          parse,
+        }) !== undefined;
+    }
     if (ok) toastWithUndo(`Set “${field.name}” on ${count}`);
   };
 

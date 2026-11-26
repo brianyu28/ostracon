@@ -18,7 +18,8 @@ export function DeleteFieldDialog({ fieldId, onClose, onDeleted }: DeleteFieldDi
   if (!doc || !field) return null;
   let consequence: string;
   if (field.type === 'link') {
-    const inverse = doc.fields[field.config.inverseFieldId];
+    const inverseId = field.config.inverseFieldId;
+    const inverse = inverseId === undefined ? undefined : doc.fields[inverseId];
     const other = inverse ? doc.collections[inverse.collectionId] : undefined;
     consequence =
       inverse && inverse.id !== field.id

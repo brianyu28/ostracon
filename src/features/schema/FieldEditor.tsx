@@ -14,14 +14,18 @@ import { toast } from '@/store/toastStore';
 import { useDocStore } from '@/store/docStore';
 import { toastWithUndo, tryDispatch, tryRun } from '@/store/actions';
 import { uiStore, useUi, type FieldEditorTarget } from '@/store/uiStore';
+import { BacklinkOptions } from './BacklinkOptions';
 import { DeleteFieldDialog } from './DeleteFieldDialog';
 import { FieldConfigEditor, type ConfigDraft } from './FieldConfigEditor';
+import { NewLinkOptions, type LinkDraft } from './NewLinkOptions';
 import styles from './FieldEditor.module.scss';
 
-/** Types offered in the type menu (links and formulas get their own flows in later phases). */
+/** Types a field can be changed to (formulas arrive in Phase 7; links are created new). */
 const PICKABLE: readonly FieldType[] = FIELD_TYPE_ORDER.filter(
   (t) => t !== 'link' && t !== 'formula',
 );
+/** Types offered for a new field. */
+const PICKABLE_NEW: readonly FieldType[] = FIELD_TYPE_ORDER.filter((t) => t !== 'formula');
 
 /** The app-wide field editor dialog, opened through `ui.openFieldEditor`. */
 export function FieldEditorDialog() {
@@ -67,6 +71,14 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
   const [required, setRequired] = useState(original?.required === true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [link, setLink] = useState<LinkDraft>({
+    targetCollectionId: null,
+    inverseName: '',
+    multiple: true,
+    inverseMultiple: true,
+    symmetric: false,
+    backlink: true,
+  });
 
   const configCtx = useMemo(() => ({ settings, newId }), [settings]);
   const retyping = original !== undefined && type !== original.type;
@@ -111,12 +123,38 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
         ...(index ? { links: index } : {}),
       });
       setConfig(typeof derived === 'string' ? {} : configOf(derived.field));
+    } else if (next === 'link') {
+      setConfig({}); // links are configured by NewLinkOptions
     } else {
       setConfig((fieldType(next).defaultConfig(configCtx) ?? {}) as ConfigDraft);
     }
   };
 
   const save = () => {
+    if (!original && type === 'link') {
+      if (!link.targetCollectionId) {
+        setError('Pick the collection to link to.');
+        return;
+      }
+      const created = tryDispatch('createLinkField', {
+        collectionId: target.collectionId,
+        name,
+        targetCollectionId: link.targetCollectionId,
+        multiple: link.multiple,
+        ...(link.symmetric
+          ? { symmetric: true }
+          : !link.backlink
+            ? { backlink: false }
+            : {
+                inverseMultiple: link.inverseMultiple,
+                ...(link.inverseName.trim() ? { inverseName: link.inverseName } : {}),
+              }),
+        ...(target.viewId ? { viewId: target.viewId } : {}),
+        ...(target.afterFieldId ? { afterFieldId: target.afterFieldId } : {}),
+      });
+      if (created) onClose();
+      return;
+    }
     const def = fieldType(type);
     const normalized = def.normalizeConfig(config, configCtx);
     if (type !== 'link' && typeof normalized === 'string') {
@@ -166,7 +204,9 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
     if (ok) onClose();
   };
 
-  const typeOptions = (original?.type === 'link' ? [...PICKABLE, 'link' as const] : PICKABLE)
+  const typeOptions = (
+    !original ? PICKABLE_NEW : original.type === 'link' ? [...PICKABLE, 'link' as const] : PICKABLE
+  )
     .filter((t) => !isPrimary || fieldType(t).canBePrimary)
     .map((t) => ({ value: t, label: fieldType(t).label }));
   const linkTarget =
@@ -209,17 +249,36 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
         }}
       />
       <div className={styles.config}>
-        <FieldConfigEditor
-          type={type}
-          config={config}
-          onChange={(next) => {
-            setConfig(next);
-            setError(null);
-          }}
-          format={format}
-          optionUsage={optionUsage}
-          {...(linkTarget ? { linkTarget } : {})}
-        />
+        {!original && type === 'link' ? (
+          <NewLinkOptions
+            collection={collection}
+            collections={Object.values(doc.collections).sort((a, b) => a.order - b.order)}
+            draft={link}
+            onChange={(next) => {
+              // A new link field is named after what it links to unless it already has a name.
+              const picked = next.targetCollectionId
+                ? doc.collections[next.targetCollectionId]
+                : undefined;
+              if (picked && next.targetCollectionId !== link.targetCollectionId && !name.trim())
+                setName(picked.name);
+              setLink(next);
+              setError(null);
+            }}
+          />
+        ) : (
+          <FieldConfigEditor
+            type={type}
+            config={config}
+            onChange={(next) => {
+              setConfig(next);
+              setError(null);
+            }}
+            format={format}
+            optionUsage={optionUsage}
+            {...(linkTarget ? { linkTarget } : {})}
+          />
+        )}
+        {original?.type === 'link' && type === 'link' && <BacklinkOptions field={original} />}
       </div>
       {plan && <TypeChangeNotice plan={plan} from={original} to={type} />}
       <Textarea
@@ -303,7 +362,12 @@ function TypeChangeNotice({ plan, from, to }: TypeChangeNoticeProps) {
   if (plan.converted) parts.push(`${pluralize(plan.converted, 'value')} will convert to ${label}`);
   if (plan.lost)
     parts.push(`${pluralize(plan.lost, 'value')} can’t be converted and will be cleared`);
-  if (from?.type === 'link') parts.push('the links and the paired field will be removed');
+  if (from?.type === 'link')
+    parts.push(
+      from.config.inverseFieldId && from.config.inverseFieldId !== from.id
+        ? 'the links and the backlink field will be removed'
+        : 'the links will be removed',
+    );
   if (parts.length === 0) parts.push('No records have a value yet');
   const lost = plan.lost > 0 || from?.type === 'link';
   return (

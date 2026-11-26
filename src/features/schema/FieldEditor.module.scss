@@ -53,3 +53,17 @@
 .examples {
   color: var(--os-text-dim);
 }
+
+.linkOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.backlink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-1;
+}

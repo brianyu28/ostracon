@@ -189,3 +189,10 @@ textarea.cellInput {
   border: 1px solid var(--os-border);
   border-radius: $radius-sm;
 }
+
+.optionText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

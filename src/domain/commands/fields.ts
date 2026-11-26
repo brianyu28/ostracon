@@ -3,8 +3,8 @@ import { original, type Draft } from 'immer';
 import { planTypeChange } from '../fields/convert';
 import { fieldType } from '../fields/registry';
 import { INVALID, type ConfigContext } from '../fields/model';
-import { canonicalFieldId, linksOf, storedLinkKey, type LinkField } from '../links';
-import { getRecord, iterateRecords, removeLink, type DocModel } from '../model';
+import { canonicalFieldId, linksOf, rekeyLinks, storedLinkKey, type LinkField } from '../links';
+import { getRecord, iterateLinks, iterateRecords, removeLink, type DocModel } from '../model';
 import type { Field, FieldType, Id } from '../schema/types';
 import {
   applyChanges,
@@ -93,12 +93,17 @@ export interface NewLinkField {
   inverseMultiple?: boolean;
   /** One field linking records of the same collection both ways (e.g. Friends). */
   symmetric?: boolean;
+  /** Add a paired field to the target collection that links back (default: true). */
+  backlink?: boolean;
   afterFieldId?: Id;
   viewId?: Id;
 }
 
 /** Creates a link field and its paired field on the target collection (one field if symmetric). */
-export const createLinkField = defineCommand<NewLinkField, { fieldId: Id; inverseFieldId: Id }>({
+export const createLinkField = defineCommand<
+  NewLinkField,
+  { fieldId: Id; inverseFieldId: Id | undefined }
+>({
   label: 'Add link field',
   run(draft, input, { now, newId }) {
     const source = required(draft.collections[input.collectionId], 'Collection');
@@ -108,7 +113,8 @@ export const createLinkField = defineCommand<NewLinkField, { fieldId: Id; invers
       throw new CommandError('A two-way link within one field must link a collection to itself.');
     const name = checkFieldName(draft, input.collectionId, input.name);
     const id = newId('field');
-    const inverseId = symmetric ? id : newId('field');
+    const backlink = symmetric || input.backlink !== false;
+    const inverseId = symmetric ? id : backlink ? newId('field') : undefined;
     const multiple = input.multiple !== false;
     const stamps = { createdAt: now, updatedAt: now };
     const field: Field = {
@@ -119,14 +125,14 @@ export const createLinkField = defineCommand<NewLinkField, { fieldId: Id; invers
       type: 'link',
       config: {
         targetCollectionId: input.targetCollectionId,
-        inverseFieldId: inverseId,
+        ...(inverseId ? { inverseFieldId: inverseId } : {}),
         ...(multiple ? { multiple: true as const } : {}),
       },
       ...stamps,
     };
     draft.fields[id] = field;
     addFieldToViews(draft, field, now, input);
-    if (!symmetric) {
+    if (!symmetric && inverseId) {
       const inverseName = input.inverseName?.trim()
         ? checkFieldName(draft, input.targetCollectionId, input.inverseName)
         : uniqueFieldName(draft, input.targetCollectionId, source.name);
@@ -261,7 +267,8 @@ export const changeFieldType = defineCommand<
     if (before.type === 'link') {
       // The links go (their titles were converted above), and so does the paired field.
       removeLinksOfFields(draft, new Set([canonicalFieldId(before)]), ctx.now);
-      const inverse = draft.fields[before.config.inverseFieldId];
+      const inverseId = before.config.inverseFieldId;
+      const inverse = inverseId === undefined ? undefined : draft.fields[inverseId];
       if (inverse && inverse.id !== id) {
         Reflect.deleteProperty(draft.fields, inverse.id);
         tombstone(draft, inverse.id, ctx.now);
@@ -309,7 +316,8 @@ export const deleteField = defineCommand<{ id: Id }>({
         'The primary field can’t be deleted. Make another field primary first.',
       );
     if (field.type === 'link') {
-      const inverse = draft.fields[field.config.inverseFieldId];
+      const inverseId = field.config.inverseFieldId;
+      const inverse = inverseId === undefined ? undefined : draft.fields[inverseId];
       if (inverse && draft.collections[inverse.collectionId]?.primaryFieldId === inverse.id)
         throw new CommandError('The linked field is a primary field.');
     }
@@ -328,5 +336,91 @@ export const setPrimaryField = defineCommand<{ collectionId: Id; fieldId: Id }>(
       throw new CommandError('The primary field must be text or a formula.');
     collection.primaryFieldId = fieldId;
     collection.updatedAt = now;
+  },
+});
+
+/**
+ * Adds the paired field to a one-way link field's target collection, so the target's records
+ * show what links to them. The field's links stay; they now read from both sides.
+ */
+export const addBacklink = defineCommand<{ fieldId: Id; name?: string; multiple?: boolean }, Id>({
+  label: 'Add backlink',
+  run(draft, { fieldId, name, multiple = true }, ctx) {
+    const { now, newId } = ctx;
+    const field = required(draft.fields[fieldId], 'Field');
+    if (field.type !== 'link') throw new CommandError('That field doesn’t link records.');
+    if (field.config.inverseFieldId !== undefined)
+      throw new CommandError('This field already has a backlink.');
+    const targetId = field.config.targetCollectionId;
+    const source = required(draft.collections[field.collectionId], 'Collection');
+    required(draft.collections[targetId], 'Linked collection');
+    // The links are stored under this field now; check them against a single-valued backlink.
+    if (!multiple) {
+      const seen = new Set<Id>();
+      for (const [key] of iterateLinks(draft)) {
+        if (!key.startsWith(`${field.id}|`)) continue;
+        const to = key.split('|')[2] ?? '';
+        if (seen.has(to))
+          throw new CommandError(
+            'Some records are linked from more than one record, so the backlink must allow several.',
+          );
+        seen.add(to);
+      }
+    }
+    const inverseId = newId('field');
+    const inverse: Field = {
+      id: inverseId,
+      collectionId: targetId,
+      name: name?.trim()
+        ? checkFieldName(draft, targetId, name)
+        : uniqueFieldName(draft, targetId, source.name),
+      order: orderAfter(fieldsOf(draft, targetId)),
+      type: 'link',
+      config: {
+        targetCollectionId: field.collectionId,
+        inverseFieldId: field.id,
+        ...(multiple ? { multiple: true as const } : {}),
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    draft.fields[inverseId] = inverse;
+    field.config.inverseFieldId = inverseId;
+    field.updatedAt = now;
+    addFieldToViews(draft, inverse, now);
+    // The pair's links live under its smaller id.
+    if (inverseId < field.id)
+      for (const key of rekeyLinks(draft, field.id, inverseId, true)) tombstone(draft, key, now);
+    return inverseId;
+  },
+});
+
+/**
+ * Removes a link field's paired field from the other collection. The links stay on this
+ * field (one-way from now on).
+ */
+export const removeBacklink = defineCommand<{ fieldId: Id }>({
+  label: 'Remove backlink',
+  run(draft, { fieldId }, { now }) {
+    const field = required(draft.fields[fieldId], 'Field');
+    if (field.type !== 'link') throw new CommandError('That field doesn’t link records.');
+    const inverseId = field.config.inverseFieldId;
+    if (inverseId === undefined) throw new CommandError('This field has no backlink.');
+    if (inverseId === field.id)
+      throw new CommandError(
+        'A field that links both ways within one collection is its own backlink.',
+      );
+    const inverse = draft.fields[inverseId];
+    if (inverse && draft.collections[inverse.collectionId]?.primaryFieldId === inverseId)
+      throw new CommandError('The backlink is a primary field.');
+    if (inverseId < field.id)
+      for (const key of rekeyLinks(draft, inverseId, field.id, true)) tombstone(draft, key, now);
+    Reflect.deleteProperty(field.config, 'inverseFieldId');
+    field.updatedAt = now;
+    if (inverse) {
+      Reflect.deleteProperty(draft.fields, inverseId);
+      tombstone(draft, inverseId, now);
+      repairViews(draft, inverse.collectionId, now);
+    }
   },
 });

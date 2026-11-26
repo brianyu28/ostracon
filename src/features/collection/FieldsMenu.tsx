@@ -1,4 +1,4 @@
-import { Button, Checkbox, Popover } from '@mantine/core';
+import { ActionIcon, Button, Checkbox, Popover } from '@mantine/core';
 import { IconList, IconSettings } from '@tabler/icons-react';
 import { FieldTypeIcon } from '@/components/FieldTypeIcon/FieldTypeIcon';
 import type { Collection, View } from '@/domain/schema/types';
@@ -14,9 +14,17 @@ interface FieldsMenuProps {
   view: View;
   opened: boolean;
   onChange: (opened: boolean) => void;
+  /** An icon-only button (phones). */
+  compact?: boolean;
 }
 
-export function FieldsMenu({ collection, view, opened, onChange }: FieldsMenuProps) {
+export function FieldsMenu({
+  collection,
+  view,
+  opened,
+  onChange,
+  compact = false,
+}: FieldsMenuProps) {
   const fieldsMap = useDocStore((s) => s.doc?.fields);
   if (!fieldsMap) return null;
   const fields = collectionFields(fieldsMap, collection.id);
@@ -38,20 +46,34 @@ export function FieldsMenu({ collection, view, opened, onChange }: FieldsMenuPro
   return (
     <Popover position="bottom-end" withinPortal shadow="md" opened={opened} onChange={onChange}>
       <Popover.Target>
-        <Button
-          size="xs"
-          variant={hidden.size ? 'light' : 'subtle'}
-          color="gray"
-          leftSection={<IconList size={14} />}
-          onClick={() => {
-            onChange(!opened);
-          }}
-          rightSection={
-            hidden.size ? <span className={styles.badge}>{hidden.size} hidden</span> : undefined
-          }
-        >
-          Fields
-        </Button>
+        {compact ? (
+          <ActionIcon
+            variant={hidden.size ? 'light' : 'subtle'}
+            color={hidden.size ? 'accent' : 'gray'}
+            size="md"
+            aria-label="Fields"
+            onClick={() => {
+              onChange(!opened);
+            }}
+          >
+            <IconList size={15} />
+          </ActionIcon>
+        ) : (
+          <Button
+            size="xs"
+            variant={hidden.size ? 'light' : 'subtle'}
+            color="gray"
+            leftSection={<IconList size={14} />}
+            onClick={() => {
+              onChange(!opened);
+            }}
+            rightSection={
+              hidden.size ? <span className={styles.badge}>{hidden.size} hidden</span> : undefined
+            }
+          >
+            Fields
+          </Button>
+        )}
       </Popover.Target>
       <Popover.Dropdown className={styles.fieldsMenu}>
         {fields.map((f) => {

@@ -1,5 +1,6 @@
 import type { FieldOf } from '@/domain/schema/types';
 import { DateEditor } from './DateEditor';
+import { LinkEditor } from './LinkEditor';
 import { LocationEditor } from './LocationEditor';
 import { RichTextEditor } from './RichTextEditor';
 import { SelectEditor } from './SelectEditor';
@@ -25,8 +26,9 @@ export function ValueEditor(props: EditorProps) {
       return <LocationEditor {...(props as EditorProps<FieldOf<'location'>>)} />;
     case 'richText':
       return <RichTextEditor {...props} />;
-    case 'checkbox':
     case 'link':
+      return <LinkEditor {...(props as EditorProps<FieldOf<'link'>>)} />;
+    case 'checkbox':
     case 'formula':
     case 'createdTime':
     case 'modifiedTime':

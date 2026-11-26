@@ -3,10 +3,7 @@ import { IconPlus } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { recordPath } from '@/app/routes';
-import type { DocIndex } from '@/domain/aggregates/docIndex';
-import { getRecord, type DocModel } from '@/domain/model';
 import { DEFAULT_SETTINGS } from '@/domain/schema/defaults';
-import { recordTitle } from '@/domain/records';
 import type { Collection, Field, Id, RecordEntity, View } from '@/domain/schema/types';
 import type { ViewContext } from '@/domain/views/filter';
 import type { RecordGroup } from '@/domain/views/groups';
@@ -23,6 +20,7 @@ import { duplicateRecords } from '@/features/record/recordActions';
 import { DeleteFieldDialog } from '@/features/schema/DeleteFieldDialog';
 import { applyEdit, pasteMessage } from './applyEdit';
 import { GUTTER_WIDTH, viewColumns } from './columns';
+import { linkReader } from './linked';
 import { hasEditor } from './editors/hasEditor';
 import { ValueEditor } from './editors/ValueEditor';
 import type { EditorChange, EditorExit } from './editors/types';
@@ -61,22 +59,6 @@ type DisplayRow =
   | { kind: 'group'; group: RecordGroup; collapsed: boolean }
   /** `index` is the record's position among the records the cursor moves through. */
   | { kind: 'record'; record: RecordEntity; index: number };
-
-/**
- * Reads linked records' titles. `_version` is the index version: the index changes in place, so
- * a new reader per version lets memoized rows re-render when links change.
- */
-function linkTitleReader(doc: DocModel | null, index: DocIndex | null, _version: number) {
-  return (record: RecordEntity, field: Field): string[] => {
-    if (field.type !== 'link' || !doc || !index) return [];
-    const target = field.config.targetCollectionId;
-    return index
-      .linked(field, record.id)
-      .map((id) => getRecord(doc, target, id))
-      .filter((r) => r !== undefined)
-      .map((r) => recordTitle(doc, r));
-  };
-}
 
 /**
  * The table layout: a virtualized grid with a cell cursor, range selection, typing to edit,
@@ -159,10 +141,7 @@ export function TableView({
   const editingRow =
     editingRecordIndex === undefined ? undefined : display.ofRecord[editingRecordIndex];
 
-  const linkTitles = useMemo(
-    () => linkTitleReader(doc, index, indexVersion),
-    [doc, index, indexVersion],
-  );
+  const links = useMemo(() => linkReader(doc, index, indexVersion), [doc, index, indexVersion]);
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual returns unstable functions by design.
   const virtualizer = useVirtualizer({
@@ -252,11 +231,6 @@ export function TableView({
         setValue(record, field, record.values[field.id] === true ? undefined : true);
         return;
       }
-      if (field.type === 'link') {
-        tableActions.moveTo({ row: record.id, field: field.id });
-        tableActions.togglePanel(true);
-        return;
-      }
       if (!hasEditor(field.type)) return;
       reveal(row, col);
       tableActions.edit({ row: record.id, field: field.id }, initial);
@@ -290,7 +264,10 @@ export function TableView({
       return (
         <ValueEditor
           field={field}
-          value={record.values[field.id]}
+          value={
+            field.type === 'link' ? links(record, field).map((l) => l.id) : record.values[field.id]
+          }
+          recordId={record.id}
           {...(edit.initial !== undefined ? { initial: edit.initial } : {})}
           variant="cell"
           format={format}
@@ -305,6 +282,7 @@ export function TableView({
       );
     },
     [
+      links,
       collection.id,
       parse,
       format,
@@ -350,6 +328,15 @@ export function TableView({
       onDoubleClick: (row, col) => {
         startEditing(row, col);
       },
+      onTap: (row, col) => {
+        const { cursor: current, editing: active } = tableStore.getState();
+        const cell = cellAt(row, col);
+        if (!active && current && cell && current.row === cell.row && current.field === cell.field)
+          // After the tap's own mousedown has run (which would otherwise just select).
+          setTimeout(() => {
+            startEditing(row, col);
+          }, 0);
+      },
       onSet: setValue,
       onCheck: (row, e) => {
         const record = records[row];
@@ -377,31 +364,31 @@ export function TableView({
         tableActions.togglePanel(true);
       },
       renderEditor,
+      onOpenLink: (field, id) => {
+        if (field.type === 'link') setLocation(recordPath(field.config.targetCollectionId, id));
+      },
     }),
-    [cellAt, moveTo, startEditing, setValue, records, columns, rowIndex, renderEditor],
+    [cellAt, moveTo, startEditing, setValue, records, columns, rowIndex, renderEditor, setLocation],
   );
 
   // ── Range operations ───────────────────────────────────────────────────────
 
   const clearRange = () => {
     if (!rect) return;
-    const updates = planClear(rect, records, columnFields);
+    const updates = planClear(rect, records, columnFields, links);
     if (updates.length) tryRun('editRecords', { collectionId: collection.id, updates });
   };
 
   const fillDown = () => {
     if (!rect) return;
-    const updates = planFillDown(rect, records, columnFields);
+    const updates = planFillDown(rect, records, columnFields, links);
     if (updates.length) tryRun('editRecords', { collectionId: collection.id, updates });
   };
 
   const onCopy = (e: React.ClipboardEvent, cut = false) => {
     if (e.target !== e.currentTarget || !rect) return;
     e.preventDefault();
-    e.clipboardData.setData(
-      'text/plain',
-      toTsv(copyCells(rect, records, columnFields, linkTitles)),
-    );
+    e.clipboardData.setData('text/plain', toTsv(copyCells(rect, records, columnFields, links)));
     if (cut) clearRange();
   };
 
@@ -724,7 +711,7 @@ export function TableView({
               checked={selected.has(record.id)}
               active={panelRecord === record.id}
               format={format}
-              linkTitles={linkTitles}
+              links={links}
               handlers={handlers}
               style={{ transform: top, height: rowHeight }}
             />

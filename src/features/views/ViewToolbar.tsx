@@ -18,6 +18,8 @@ interface ViewToolbarProps {
   collection: Collection;
   view: View;
   fields: readonly Field[];
+  /** Icon-only buttons (phones). */
+  compact?: boolean;
 }
 
 const SORTABLE = (f: Field) =>
@@ -25,7 +27,7 @@ const SORTABLE = (f: Field) =>
 const GROUPABLE = (f: Field) => f.type !== 'formula' && f.type !== 'richText';
 
 /** Filter, Sort, Group, Fields and search for the current view. */
-export function ViewToolbar({ collection, view, fields }: ViewToolbarProps) {
+export function ViewToolbar({ collection, view, fields, compact = false }: ViewToolbarProps) {
   const [open, setOpen] = useState<Panel | null>(null);
   const search = useTable((s) => s.search);
   const [searching, setSearching] = useState(false);
@@ -81,20 +83,33 @@ export function ViewToolbar({ collection, view, fields }: ViewToolbarProps) {
     </Popover>
   );
 
-  const toolButton = (id: Panel, icon: ReactNode, label: string, count: number | string) => (
-    <Button
-      size="xs"
-      variant={count ? 'light' : 'subtle'}
-      color="gray"
-      leftSection={icon}
-      onClick={() => {
-        toggle(id);
-      }}
-    >
-      {label}
-      {count ? <span className={styles.count}>{count}</span> : null}
-    </Button>
-  );
+  const toolButton = (id: Panel, icon: ReactNode, label: string, count: number | string) =>
+    compact ? (
+      <ActionIcon
+        variant={count ? 'light' : 'subtle'}
+        color={count ? 'accent' : 'gray'}
+        size="md"
+        aria-label={count ? `${label} (${String(count)})` : label}
+        onClick={() => {
+          toggle(id);
+        }}
+      >
+        {icon}
+      </ActionIcon>
+    ) : (
+      <Button
+        size="xs"
+        variant={count ? 'light' : 'subtle'}
+        color="gray"
+        leftSection={icon}
+        onClick={() => {
+          toggle(id);
+        }}
+      >
+        {label}
+        {count ? <span className={styles.count}>{count}</span> : null}
+      </Button>
+    );
 
   return (
     <div className={styles.root}>
@@ -122,6 +137,7 @@ export function ViewToolbar({ collection, view, fields }: ViewToolbarProps) {
       <FieldsMenu
         collection={collection}
         view={view}
+        compact={compact}
         opened={open === 'fields'}
         onChange={(o) => {
           setOpen(o ? 'fields' : null);

@@ -87,6 +87,35 @@ describe('table', () => {
     expect(all.find((r) => r.values[title] === 'Fourth')?.values[pages]).toBe(400);
   });
 
+  it('links records with the picker, creating one inline', async () => {
+    const people = dispatch('createCollection', { name: 'People' });
+    const name = doc().collections[people]!.primaryFieldId;
+    const ana = dispatch('createRecord', { collectionId: people, values: { [name]: 'Ana' } });
+    const { fieldId } = dispatch('createLinkField', {
+      collectionId,
+      name: 'With',
+      targetCollectionId: people,
+    });
+    render(<App />);
+    const grid = await screen.findByRole('grid');
+    act(() => {
+      grid.focus();
+    });
+    fireEvent.keyDown(grid, { key: 'ArrowDown' });
+    fireEvent.keyDown(grid, { key: 'End' }); // the With column
+    fireEvent.keyDown(grid, { key: 'a' });
+    const search = await screen.findByRole('textbox', { name: 'With: find records' });
+    fireEvent.change(search, { target: { value: 'ana' } });
+    fireEvent.keyDown(search, { key: 'Enter' }); // links Ana; the picker stays open
+    fireEvent.change(search, { target: { value: 'Bo' } });
+    fireEvent.keyDown(search, { key: 'Enter' }); // creates Bo and saves
+    const linked = docStore.getState().index!.linked(doc().fields[fieldId] as never, ids[0]!);
+    expect(linked[0]).toBe(ana);
+    expect(linked).toHaveLength(2);
+    const bo = getRecord(doc(), people, linked[1]!);
+    expect(bo?.values[name]).toBe('Bo');
+  });
+
   it('opens the record panel with Space', async () => {
     render(<App />);
     const grid = await screen.findByRole('grid');

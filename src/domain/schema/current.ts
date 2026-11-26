@@ -136,7 +136,8 @@ export const FieldSchema = z.discriminatedUnion('type', [
     z.object({
       targetCollectionId: IdSchema,
       /** The paired field on the target collection (this field's own id for a symmetric link). */
-      inverseFieldId: IdSchema,
+      /** The paired field in the target collection (absent: a one-way link, no backlink). */
+      inverseFieldId: IdSchema.optional(),
       /** Links to many records (otherwise at most one). */
       multiple: z.literal(true).optional(),
     }),

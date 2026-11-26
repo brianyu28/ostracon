@@ -1,4 +1,5 @@
 import { createTheme, type MantineColorsTuple } from '@mantine/core';
+import classes from './theme.module.scss';
 
 // Terracotta accent, after the fired-clay shards (ostraka) the app is named for.
 // Shade 6 (light) and 3 (dark) match --os-accent and pass 4.5:1 on their backgrounds.
@@ -47,5 +48,6 @@ export const theme = createTheme({
     Select: { defaultProps: { size: 'xs' } },
     Checkbox: { defaultProps: { size: 'xs' } },
     Tooltip: { defaultProps: { openDelay: 400, fz: 'xs' } },
+    Modal: { classNames: { inner: classes.modalInner, content: classes.modalContent } },
   },
 });

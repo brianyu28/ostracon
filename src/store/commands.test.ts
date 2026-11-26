@@ -31,6 +31,12 @@ function linked(fieldId: Id, recordId: Id): Id[] {
   return fromIndex;
 }
 
+/** Creates a link field with a backlink and returns both ids. */
+function linkPair(input: CommandPayload<'createLinkField'>) {
+  const { fieldId, inverseFieldId } = run('createLinkField', input);
+  return { fieldId, inverseFieldId: inverseFieldId ?? '' };
+}
+
 function collectionWithPrimary(name: string) {
   const id = run('createCollection', { name });
   return { id, primary: doc().collections[id]!.primaryFieldId };
@@ -194,7 +200,7 @@ describe('links', () => {
   function restaurantsAndPeople() {
     const people = collectionWithPrimary('People');
     const places = collectionWithPrimary('Restaurants');
-    const { fieldId, inverseFieldId } = run('createLinkField', {
+    const { fieldId, inverseFieldId } = linkPair({
       collectionId: places.id,
       name: 'People',
       targetCollectionId: people.id,
@@ -230,7 +236,7 @@ describe('links', () => {
   it('keeps single-valued sides single', () => {
     const people = collectionWithPrimary('People');
     const devices = collectionWithPrimary('Devices');
-    const owner = run('createLinkField', {
+    const owner = linkPair({
       collectionId: devices.id,
       name: 'Owner',
       targetCollectionId: people.id,
@@ -261,7 +267,7 @@ describe('links', () => {
 
   it('stores symmetric links once and sees them from both records', () => {
     const people = collectionWithPrimary('People');
-    const friends = run('createLinkField', {
+    const friends = linkPair({
       collectionId: people.id,
       name: 'Friends',
       targetCollectionId: people.id,
@@ -487,5 +493,146 @@ describe('editing many records', () => {
     expect(() => {
       run('editRecords', { collectionId: c.id, updates: [{ id: a, values: { nope: 'x' } }] });
     }).toThrow(CommandError);
+  });
+});
+
+describe('link values', () => {
+  const parse = { locale: 'en-US', today: '2026-11-26' };
+
+  it('sets, pastes and clears links like other values', () => {
+    const people = collectionWithPrimary('People');
+    const visits = collectionWithPrimary('Visits');
+    const { fieldId: with_, inverseFieldId: visitsOf } = linkPair({
+      collectionId: visits.id,
+      name: 'With',
+      targetCollectionId: people.id,
+    });
+    const ana = record(people.id, people.primary, 'Ana');
+    const bo = record(people.id, people.primary, 'Bo');
+    const v1 = record(visits.id, visits.primary, 'Lunch');
+    const v2 = record(visits.id, visits.primary, 'Dinner');
+
+    run('setRecordValues', { collectionId: visits.id, id: v1, values: { [with_]: [ana, bo] } });
+    expect(linked(with_, v1)).toEqual([ana, bo]);
+    expect(linked(visitsOf, bo)).toEqual([v1]);
+
+    const result = run('setFromText', {
+      collectionId: visits.id,
+      parse,
+      rows: [
+        { id: v2, texts: { [with_]: 'bo, ANA' } },
+        { id: v1, texts: { [with_]: 'Nobody' } },
+      ],
+    });
+    expect(result.invalid).toBe(1);
+    expect(linked(with_, v2)).toEqual([bo, ana]);
+    expect(linked(with_, v1)).toEqual([ana, bo]); // unreadable: unchanged
+
+    run('editRecords', {
+      collectionId: visits.id,
+      updates: [{ id: v2, values: { [with_]: undefined } }],
+    });
+    expect(linked(with_, v2)).toEqual([]);
+    run('setFieldValue', { collectionId: visits.id, ids: [v1, v2], fieldId: with_, value: [bo] });
+    expect(linked(visitsOf, bo)).toEqual([v1, v2]);
+    expectIntact();
+  });
+
+  it('creates a linked record inline in one undo step', () => {
+    const people = collectionWithPrimary('People');
+    const visits = collectionWithPrimary('Visits');
+    const { fieldId } = linkPair({
+      collectionId: visits.id,
+      name: 'With',
+      targetCollectionId: people.id,
+    });
+    const ana = record(people.id, people.primary, 'Ana');
+    const v1 = record(visits.id, visits.primary, 'Lunch');
+    const created = run('createLinkedRecord', {
+      fieldId,
+      recordId: v1,
+      title: 'Cy',
+      targetIds: [ana],
+    });
+    expect(getRecord(doc(), people.id, created)?.values[people.primary]).toBe('Cy');
+    expect(linked(fieldId, v1)).toEqual([ana, created]);
+    expectIntact();
+    store.getState().undo();
+    expect(getRecord(doc(), people.id, created)).toBeUndefined();
+    expect(linked(fieldId, v1)).toEqual([]);
+  });
+});
+
+describe('backlinks', () => {
+  function setup() {
+    const people = collectionWithPrimary('People');
+    const visits = collectionWithPrimary('Visits');
+    const ana = record(people.id, people.primary, 'Ana');
+    const bo = record(people.id, people.primary, 'Bo');
+    const v1 = record(visits.id, visits.primary, 'Lunch');
+    const v2 = record(visits.id, visits.primary, 'Dinner');
+    return { people, visits, ana, bo, v1, v2 };
+  }
+
+  it('creates one-way links and adds or removes the backlink later, keeping the links', () => {
+    const t = setup();
+    const { fieldId, inverseFieldId } = run('createLinkField', {
+      collectionId: t.visits.id,
+      name: 'With',
+      targetCollectionId: t.people.id,
+      backlink: false,
+    });
+    expect(inverseFieldId).toBeUndefined();
+    expect(Object.values(doc().fields).filter((f) => f.collectionId === t.people.id)).toHaveLength(
+      1,
+    );
+    run('setLinks', { fieldId, recordId: t.v1, targetIds: [t.ana, t.bo] });
+    run('setLinks', { fieldId, recordId: t.v2, targetIds: [t.ana] });
+    expectIntact();
+
+    // Add it, remove it and add it again: the links survive each change of the pair.
+    for (let round = 0; round < 3; round++) {
+      const back = run('addBacklink', { fieldId, name: 'Meals' });
+      expect(doc().fields[back]).toMatchObject({ collectionId: t.people.id, name: 'Meals' });
+      expect(linked(fieldId, t.v1)).toEqual([t.ana, t.bo]);
+      expect(linked(back, t.ana)).toEqual([t.v1, t.v2]);
+      expectIntact();
+      run('removeBacklink', { fieldId });
+      expect(doc().fields[back]).toBeUndefined();
+      expect(linked(fieldId, t.v1)).toEqual([t.ana, t.bo]);
+      expect(linked(fieldId, t.v2)).toEqual([t.ana]);
+      expectIntact();
+    }
+  });
+
+  it('removes the backlink from either side and undoes cleanly', () => {
+    const t = setup();
+    const { fieldId, inverseFieldId } = linkPair({
+      collectionId: t.visits.id,
+      name: 'With',
+      targetCollectionId: t.people.id,
+    });
+    run('setLinks', { fieldId, recordId: t.v1, targetIds: [t.bo] });
+    run('removeBacklink', { fieldId: inverseFieldId }); // keep People.Visits, drop Visits.With
+    expect(doc().fields[fieldId]).toBeUndefined();
+    expect(linked(inverseFieldId, t.bo)).toEqual([t.v1]);
+    expectIntact();
+    store.getState().undo();
+    expect(linked(fieldId, t.v1)).toEqual([t.bo]);
+    expectIntact();
+  });
+
+  it('refuses a single-valued backlink when records are linked from several', () => {
+    const t = setup();
+    const { fieldId } = run('createLinkField', {
+      collectionId: t.visits.id,
+      name: 'With',
+      targetCollectionId: t.people.id,
+      backlink: false,
+    });
+    run('setLinks', { fieldId, recordId: t.v1, targetIds: [t.ana] });
+    run('setLinks', { fieldId, recordId: t.v2, targetIds: [t.ana] });
+    expect(() => run('addBacklink', { fieldId, multiple: false })).toThrow(CommandError);
+    expect(run('addBacklink', { fieldId, multiple: true })).toBeTruthy();
   });
 });

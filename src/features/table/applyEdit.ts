@@ -15,6 +15,19 @@ export function applyEdit(
   change: EditorChange,
   parse: ParseContext,
 ): void {
+  if (change.kind === 'links') {
+    tryRun('setRecordValues', { collectionId, id: recordId, values: { [field.id]: change.ids } });
+    return;
+  }
+  if (change.kind === 'createLinked') {
+    tryRun('createLinkedRecord', {
+      fieldId: field.id,
+      recordId,
+      title: change.title,
+      targetIds: change.ids,
+    });
+    return;
+  }
   if (change.kind === 'text') {
     const result = tryDispatch('setFromText', {
       collectionId,

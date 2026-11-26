@@ -86,6 +86,10 @@ Other single sources of truth:
   component per file. `@use '@/styles/tokens' as *;` for sizes/breakpoints; colors via
   `var(--os-*)`. No Tailwind or CSS-in-JS. Mantine for complex controls, themed compact
   (`src/app/theme.ts`).
+- **Every screen size**: desktop, tablet, large and small phones (down to ~280px), landscape
+  phones and foldables (folded and unfolded). Use the `phone`/`tablet`/`below-desktop` mixins,
+  `(hover: none)` for touch, `(max-height: …)` for short screens and the `--os-safe-*`
+  variables. Check new UI at several sizes, not just desktop.
 - **Information density**: compact rows (~26px), 13px base type, tabular numbers, minimal chrome
   and explanatory text.
 - **No HTML strings**: never use `dangerouslySetInnerHTML`, `innerHTML` or inline scripts. The

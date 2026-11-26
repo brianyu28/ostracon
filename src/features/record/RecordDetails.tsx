@@ -1,5 +1,5 @@
 import { ActionIcon, Tooltip, UnstyledButton } from '@mantine/core';
-import { IconMapPin } from '@tabler/icons-react';
+import { IconMapPin, IconPencil } from '@tabler/icons-react';
 import { clsx } from 'clsx';
 import { useState } from 'react';
 import { Link } from 'wouter';
@@ -53,7 +53,8 @@ export function RecordDetails({ record, variant }: RecordDetailsProps) {
   const editor = (field: Field) => (
     <ValueEditor
       field={field}
-      value={record.values[field.id]}
+      value={field.type === 'link' ? linked(field).map((r) => r.id) : record.values[field.id]}
+      recordId={record.id}
       variant="panel"
       format={format}
       parse={parse}
@@ -73,13 +74,25 @@ export function RecordDetails({ record, variant }: RecordDetailsProps) {
     if (field.type === 'link') {
       const records = linked(field);
       return (
-        <div className={styles.links}>
-          {records.length === 0 && <span className={styles.placeholder}>None</span>}
+        <div className={clsx(styles.links, field.required && !records.length && styles.missing)}>
           {records.map((r) => (
             <Link key={r.id} href={recordPath(r.collectionId, r.id)} className={styles.linkChip}>
               {recordTitle(doc, r)}
             </Link>
           ))}
+          <UnstyledButton
+            className={styles.linkAdd}
+            aria-label={`Edit ${field.name}`}
+            onClick={() => {
+              setEditing(field.id);
+            }}
+          >
+            {records.length ? (
+              <IconPencil size={13} />
+            ) : (
+              <span className={styles.placeholder}>Add…</span>
+            )}
+          </UnstyledButton>
         </div>
       );
     }

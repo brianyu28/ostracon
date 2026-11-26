@@ -100,3 +100,14 @@
     opacity: 0.8;
   }
 }
+
+.linkChipButton {
+  font: inherit;
+  font-size: $font-sm;
+  line-height: 18px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--os-accent);
+  }
+}

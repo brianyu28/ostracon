@@ -435,3 +435,31 @@ $row: var(--row-height, #{$row-height});
   display: inline-block;
   width: 14px;
 }
+
+// ── Touch screens (no hover) ──────────────────────────────────────────────
+
+@media (hover: none) {
+  .scroller {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  // The row's checkbox and open button are always there instead of appearing on hover.
+  .rowNumber {
+    display: none;
+  }
+
+  .rowCheck,
+  .expand {
+    display: flex;
+  }
+
+  .summaryHint {
+    visibility: visible;
+  }
+
+  .resizer {
+    width: 14px;
+    right: -7px;
+  }
+}

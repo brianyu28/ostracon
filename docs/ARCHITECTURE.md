@@ -303,6 +303,25 @@ and creates missing select options in the same undo step. Fill down and clearing
 Editors (`table/editors/`) share one contract: they produce a value or text change and commit
 on Enter or Tab, cancel on Esc, and save a pending change if they close any other way (a click
 elsewhere). The same editors serve table cells, the record panel and bulk "Set field".
+A link field's backlink (the paired field in the other collection) is optional: a one-way
+field stores its links under its own id. `addBacklink` and `removeBacklink` change that at any
+time without losing links; when the pair's canonical side changes, `rekeyLinks` moves the
+links (the old keys are tombstoned). Merge repair turns a field whose pair vanished into a
+one-way field.
+
+Link fields edit like other values: record commands take a link field's value as the full
+list of linked record ids (`setRecordValues`, `editRecords`, `setFieldValue`), and
+`setFromText` reads pasted titles (case-insensitive; several separated by commas, semicolons
+or lines). `createLinkedRecord` adds a record to the other collection and links it in one undo
+step (the picker's "Create"). In the table, a link chip in the selected cell opens the linked
+record.
+
+**Screen sizes.** Phones (< 640px wide) show the view as a list (with group headers) and open
+records as pages; the view tabs and an icon-only toolbar stay. Short screens (≤ 520px tall:
+landscape phones) fold the collection header into the view bar. Touch screens show row
+controls without hover and edit a selected cell on tap. Dialogs fill the screen on phones
+(`app/theme.module.scss`).
+
 `record/RecordDetails` lists every field of a record and is both the side panel and the record
 page (`#/c/<collectionId>/r/<recordId>`, also the phone view of a record). Phones get a list
 instead of the grid.

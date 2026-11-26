@@ -35,12 +35,15 @@ import { RecordList } from './RecordList';
 import styles from './CollectionPage.module.scss';
 
 const PHONE_QUERY = '(max-width: 639.98px)';
+const SHORT_QUERY = '(max-height: 520px)';
 
 /** A collection and one of its views: the table with the record panel (a list on phones). */
 export function CollectionPage() {
   const { collectionId = '', viewId } = useParams<{ collectionId?: string; viewId?: string }>();
   const doc = useDocStore((s) => s.doc);
   const phone = useMediaQuery(PHONE_QUERY);
+  // Landscape phones and small windows: the collection header folds into the view bar.
+  const short = useMediaQuery(SHORT_QUERY);
   const [, navigate] = useLocation();
   const collection = doc?.collections[collectionId];
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -126,95 +129,119 @@ export function CollectionPage() {
     .map((f) => doc.fields[f.fieldId])
     .filter((f): f is Field => f !== undefined);
 
-  return (
-    <div className={styles.root}>
-      <div className={styles.header}>
-        <CollectionIcon
-          icon={collection.icon}
-          color={collection.color}
-          size={18}
-          stroke={1.75}
-          className={styles.icon}
-        />
-        <InlineEdit
-          value={collection.name}
-          label="Collection name"
-          className={styles.name}
-          onCommit={(name) => {
-            tryDispatch('updateCollection', { id: collection.id, changes: { name } });
+  const headerActions = (
+    <div className={styles.actions}>
+      {phone || short ? (
+        <ActionIcon
+          variant="filled"
+          size="md"
+          aria-label="New record"
+          onClick={() => {
+            if (phone) newRecordOnPhone();
+            else runCommand('record.new');
           }}
-        />
-        <span className={styles.count}>
-          {result.records.length === total
-            ? pluralize(total, 'record')
-            : `${result.records.length.toLocaleString()} of ${pluralize(total, 'record')}`}
-        </span>
-        <div className={styles.actions}>
-          <Button
-            size="xs"
-            leftSection={<IconPlus size={14} />}
+        >
+          <IconPlus size={16} />
+        </ActionIcon>
+      ) : (
+        <Button
+          size="xs"
+          leftSection={<IconPlus size={14} />}
+          onClick={() => {
+            runCommand('record.new');
+          }}
+        >
+          New record
+        </Button>
+      )}
+      <Menu position="bottom-end">
+        <Menu.Target>
+          <ActionIcon variant="subtle" color="gray" aria-label="Collection actions">
+            <IconDots size={16} />
+          </ActionIcon>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Item leftSection={<IconColumnInsertRight size={14} />} onClick={addField}>
+            Add field…
+          </Menu.Item>
+          <Menu.Item
+            leftSection={<IconSettings size={14} />}
             onClick={() => {
-              if (phone) newRecordOnPhone();
-              else runCommand('record.new');
+              ui.openCollectionSettings(collection.id);
             }}
           >
-            New record
-          </Button>
-          <Menu position="bottom-end">
-            <Menu.Target>
-              <ActionIcon variant="subtle" color="gray" aria-label="Collection actions">
-                <IconDots size={16} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item leftSection={<IconColumnInsertRight size={14} />} onClick={addField}>
-                Add field…
-              </Menu.Item>
-              <Menu.Item
-                leftSection={<IconSettings size={14} />}
-                onClick={() => {
-                  ui.openCollectionSettings(collection.id);
-                }}
-              >
-                Collection settings…
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item
-                color="red"
-                leftSection={<IconTrash size={14} />}
-                onClick={() => {
-                  setConfirmingDelete(true);
-                }}
-              >
-                Delete collection
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-          {!phone && (
-            <ActionIcon
-              variant={panelOpen ? 'light' : 'subtle'}
-              color="gray"
-              aria-label="Record panel"
-              title="Record panel (Space)"
-              onClick={() => {
-                tableActions.togglePanel();
-              }}
-            >
-              <IconLayoutSidebarRight size={16} />
-            </ActionIcon>
-          )}
-        </div>
-      </div>
+            Collection settings…
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Item
+            color="red"
+            leftSection={<IconTrash size={14} />}
+            onClick={() => {
+              setConfirmingDelete(true);
+            }}
+          >
+            Delete collection
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
       {!phone && (
-        <div className={styles.viewBar}>
-          <ViewTabs collectionId={collection.id} views={views} activeId={view.id} />
-          <ViewToolbar collection={collection} view={view} fields={fields} />
+        <ActionIcon
+          variant={panelOpen ? 'light' : 'subtle'}
+          color="gray"
+          aria-label="Record panel"
+          title="Record panel (Space)"
+          onClick={() => {
+            tableActions.togglePanel();
+          }}
+        >
+          <IconLayoutSidebarRight size={16} />
+        </ActionIcon>
+      )}
+    </div>
+  );
+
+  return (
+    <div className={styles.root}>
+      {!short && (
+        <div className={styles.header}>
+          <CollectionIcon
+            icon={collection.icon}
+            color={collection.color}
+            size={18}
+            stroke={1.75}
+            className={styles.icon}
+          />
+          <InlineEdit
+            value={collection.name}
+            label="Collection name"
+            className={styles.name}
+            onCommit={(name) => {
+              tryDispatch('updateCollection', { id: collection.id, changes: { name } });
+            }}
+          />
+          <span className={styles.count}>
+            {result.records.length === total
+              ? pluralize(total, 'record')
+              : `${result.records.length.toLocaleString()} of ${pluralize(total, 'record')}`}
+          </span>
+          {headerActions}
         </div>
       )}
+      <div className={styles.viewBar}>
+        <ViewTabs collectionId={collection.id} views={views} activeId={view.id} />
+        <ViewToolbar collection={collection} view={view} fields={fields} compact={phone || short} />
+        {short && headerActions}
+      </div>
       {checkedIds.length > 0 && !phone && <BulkBar collectionId={collection.id} ids={checkedIds} />}
       <div className={styles.body}>
         {phone ? (
-          <RecordList collection={collection} records={result.records} fields={visibleFields} />
+          <RecordList
+            collection={collection}
+            records={result.records}
+            fields={visibleFields}
+            groups={result.groups}
+            view={view}
+          />
         ) : (
           <TableView
             collection={collection}

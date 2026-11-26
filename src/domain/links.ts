@@ -1,5 +1,6 @@
 /**
- * Links between records. A link field pair (Restaurants.People ↔ People.Restaurants) shares
+ * Links between records. A one-way link field (no backlink) stores its links under its own id.
+ * A link field pair (Restaurants.People ↔ People.Restaurants) shares
  * one set of links, stored once in the document's `links` table from the pair's
  * **canonical** side: the field with the smaller id. A symmetric link (People.Friends) is one
  * field paired with itself, and its links are stored with the smaller record id first.
@@ -10,7 +11,7 @@
  * The key encodes the whole link, so scanning keys never touches the tuples (cheap on Immer
  * drafts), and adding a link twice is a no-op.
  */
-import { getLink, hasLink, linkKey, type DocModel } from './model';
+import { getLink, hasLink, linkKey, putLink, removeLink, type DocModel } from './model';
 import type { Field, FieldOf, Id } from './schema/types';
 
 export type LinkField = FieldOf<'link'>;
@@ -19,10 +20,15 @@ export function isSymmetric(field: LinkField): boolean {
   return field.config.inverseFieldId === field.id;
 }
 
-/** The pair's canonical field id (where its links are stored). */
+/** Whether the field has a paired field in the target collection (or is symmetric). */
+export function hasBacklink(field: LinkField): boolean {
+  return field.config.inverseFieldId !== undefined;
+}
+
+/** The pair's canonical field id (where its links are stored); a one-way field's own id. */
 export function canonicalFieldId(field: LinkField): Id {
   const inverse = field.config.inverseFieldId;
-  return field.id < inverse ? field.id : inverse;
+  return inverse === undefined || field.id < inverse ? field.id : inverse;
 }
 
 /** The stored [field, from, to] of a link seen from `field`'s side (`recordId` → `targetId`). */
@@ -133,4 +139,30 @@ export function linkTimestamp(now: string, index: number): string {
   if (index === 0) return now;
   const ms = Date.parse(now);
   return Number.isNaN(ms) ? now : new Date(ms + index).toISOString();
+}
+
+/**
+ * Moves every link stored under the canonical field `from` to `to` (swapping each link's ends
+ * when `swap`), for when a pair's canonical side changes: a backlink added or removed.
+ * Returns the old keys (callers tombstone them).
+ */
+export function rekeyLinks(
+  doc: Pick<DocModel, 'links'>,
+  from: Id,
+  to: Id,
+  swap: boolean,
+): string[] {
+  const prefix = `${from}|`;
+  const moved: [string, Id, Id, string][] = [];
+  for (const bucket of Object.values(doc.links)) {
+    for (const [key, link] of Object.entries(bucket)) {
+      if (!key.startsWith(prefix)) continue;
+      moved.push([key, link[1], link[2], link[3]]);
+    }
+  }
+  for (const [key, fromId, toId, created] of moved) {
+    removeLink(doc, key);
+    putLink(doc, swap ? [to, toId, fromId, created] : [to, fromId, toId, created]);
+  }
+  return moved.map(([key]) => key);
 }

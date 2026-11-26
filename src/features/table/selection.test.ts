@@ -34,13 +34,18 @@ describe('selection', () => {
 
   it('copies cells as text, links as titles', () => {
     const rect = { top: 0, bottom: 1, left: 0, right: 2 };
-    expect(copyCells(rect, rows, columns, () => ['X', 'Y'])).toEqual([
+    expect(
+      copyCells(rect, rows, columns, () => [
+        { id: 'x', title: 'X' },
+        { id: 'y', title: 'Y' },
+      ]),
+    ).toEqual([
       ['A1', 'B1', 'X, Y'],
       ['A2', '', 'X, Y'],
     ]);
   });
 
-  it('pastes a block at the corner, adding rows and skipping links', () => {
+  it('pastes a block at the corner, adding rows', () => {
     const plan = planPaste(
       [
         ['1', '2', 'link'],
@@ -52,13 +57,13 @@ describe('selection', () => {
       rows,
       columns,
     );
-    expect(plan.skipped).toBe(1);
+    expect(plan.skipped).toBe(0);
     expect(plan.added).toBe(2);
     expect(plan.rows).toEqual([
-      { id: 'r2', texts: { a: '1', b: '2' } },
-      { id: 'r3', texts: { a: '3', b: '4' } },
-      { texts: { a: '5', b: '6' } },
-      { texts: { a: '7', b: '' } },
+      { id: 'r2', texts: { a: '1', b: '2', lnk: 'link' } },
+      { id: 'r3', texts: { a: '3', b: '4', lnk: '' } },
+      { texts: { a: '5', b: '6', lnk: '' } },
+      { texts: { a: '7', b: '', lnk: '' } },
     ]);
   });
 

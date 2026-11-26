@@ -5,6 +5,7 @@
   flex: none;
   align-items: center;
   gap: 2px;
+  margin-left: auto;
 }
 
 .count {
@@ -15,6 +16,10 @@
 
 .search {
   width: 180px;
+
+  @include phone {
+    width: 130px;
+  }
 }
 
 .dropdown {
@@ -39,6 +44,10 @@
   flex-direction: column;
   gap: $space-1;
   min-width: 480px;
+
+  @include phone {
+    min-width: 0;
+  }
 }
 
 .group {
@@ -144,4 +153,30 @@
   display: flex;
   flex-direction: column;
   gap: $space-2;
+}
+
+// Narrow screens: a condition wraps onto two lines (field and condition, then the value).
+@include phone {
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .fieldSelect,
+  .operatorSelect {
+    flex: 1 1 120px;
+    width: auto;
+  }
+
+  .operand {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  .sorts {
+    min-width: 0;
+  }
+
+  .pair {
+    flex-wrap: wrap;
+  }
 }

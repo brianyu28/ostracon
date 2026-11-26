@@ -6,16 +6,19 @@ import {
   updateCollection,
 } from './collections';
 import {
+  addBacklink,
   changeFieldType,
   createField,
   createLinkField,
   deleteField,
+  removeBacklink,
   reorderFields,
   setPrimaryField,
   updateField,
 } from './fields';
 import { addLinks, removeLinks, setLinks } from './links';
 import {
+  createLinkedRecord,
   createRecord,
   deleteRecords,
   duplicateRecords,
@@ -41,6 +44,8 @@ export const commands = {
   deleteCollection,
   createField,
   createLinkField,
+  addBacklink,
+  removeBacklink,
   updateField,
   changeFieldType,
   reorderFields,
@@ -53,6 +58,7 @@ export const commands = {
   reorderViews,
   deleteView,
   createRecord,
+  createLinkedRecord,
   setRecordValues,
   setFieldValue,
   editRecords,

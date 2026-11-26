@@ -11,8 +11,13 @@
   display: flex;
   align-items: center;
   gap: $space-2;
+  min-width: 0;
   padding: $space-2 $space-3;
   border-bottom: 1px solid var(--os-border);
+
+  @include phone {
+    padding: $space-2;
+  }
 }
 
 .icon {
@@ -45,6 +50,10 @@
   gap: $space-2;
   padding: 3px $space-3;
   border-bottom: 1px solid var(--os-border);
+
+  @include phone {
+    padding: 3px $space-2;
+  }
 }
 
 .badge {
@@ -149,4 +158,25 @@
 .listSummary {
   font-size: $font-sm;
   color: var(--os-text-dim);
+}
+
+.listGroup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  height: 32px;
+  padding: 0 $space-3;
+  font-weight: 600;
+  background: var(--os-surface);
+  border-bottom: 1px solid var(--os-border);
+}
+
+.listGroupCount {
+  font-size: $font-xs;
+  font-weight: 500;
+  color: var(--os-text-faint);
 }

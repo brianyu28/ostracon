@@ -4,11 +4,13 @@ import { memo, type CSSProperties, type ReactNode } from 'react';
 import type { FormatContext } from '@/domain/fields/model';
 import type { Field, Id, RecordEntity } from '@/domain/schema/types';
 import type { Column } from './columns';
+import type { LinkReader } from './linked';
 import type { Editing } from './tableStore';
 import { TableCell, type CellHandlers } from './TableCell';
 import styles from './TableView.module.scss';
 
 export interface RowHandlers extends CellHandlers {
+  onOpenLink: (field: Field, id: Id) => void;
   onCheck: (row: number, e: React.MouseEvent) => void;
   onExpand: (id: Id) => void;
   renderEditor: (record: RecordEntity, field: Field, editing: Editing) => ReactNode;
@@ -29,7 +31,7 @@ interface TableRowProps {
   /** The record shown in the open record panel. */
   active: boolean;
   format: FormatContext;
-  linkTitles: (record: RecordEntity, field: Field) => string[];
+  links: LinkReader;
   handlers: RowHandlers;
   style: CSSProperties;
 }
@@ -46,7 +48,7 @@ export const TableRow = memo(function TableRow({
   checked,
   active,
   format,
-  linkTitles,
+  links,
   handlers,
   style,
 }: TableRowProps) {
@@ -104,7 +106,8 @@ export const TableRow = memo(function TableRow({
               : null
           }
           format={format}
-          linkTitles={linkTitles}
+          links={links}
+          onOpenLink={handlers.onOpenLink}
           handlers={handlers}
         />
       ))}

@@ -144,3 +144,23 @@
     margin-top: 2px;
   }
 }
+
+.linkAdd {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 6px;
+  color: var(--os-text-faint);
+  border-radius: $radius-sm;
+
+  &:hover {
+    color: var(--os-text);
+    background: var(--os-surface-hover);
+  }
+
+  @media (hover: hover) {
+    .links:not(:hover) &:has(svg) {
+      visibility: hidden;
+    }
+  }
+}

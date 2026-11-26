@@ -55,14 +55,16 @@ export function checkIntegrity(file: OstraconFile): IntegrityIssue[] {
       if (optionIds.size !== f.config.options.length) report(f.id, 'Duplicate option ids');
     }
     if (f.type === 'link') {
-      const inverse = fields.get(f.config.inverseFieldId);
       if (!collections.has(f.config.targetCollectionId))
         report(f.id, 'Link points at an unknown collection');
+      const inverseId = f.config.inverseFieldId;
+      const inverse = inverseId === undefined ? undefined : fields.get(inverseId);
       if (
-        inverse?.type !== 'link' ||
-        inverse.config.inverseFieldId !== f.id ||
-        inverse.collectionId !== f.config.targetCollectionId ||
-        inverse.config.targetCollectionId !== f.collectionId
+        inverseId !== undefined &&
+        (inverse?.type !== 'link' ||
+          inverse.config.inverseFieldId !== f.id ||
+          inverse.collectionId !== f.config.targetCollectionId ||
+          inverse.config.targetCollectionId !== f.collectionId)
       )
         report(f.id, 'Link field is not paired correctly');
     }
@@ -106,7 +108,8 @@ export function checkIntegrity(file: OstraconFile): IntegrityIssue[] {
     )
       report(key, 'Link points at a missing record');
     bump(`${fieldId}|${fromId}`);
-    bump(`${symmetric ? fieldId : link.config.inverseFieldId}|${toId}`);
+    const inverseId = symmetric ? fieldId : link.config.inverseFieldId;
+    if (inverseId !== undefined) bump(`${inverseId}|${toId}`);
   }
   for (const [side, count] of counts) {
     const [fieldId = '', recordId = ''] = side.split('|');

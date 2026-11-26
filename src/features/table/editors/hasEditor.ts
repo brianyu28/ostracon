@@ -2,7 +2,6 @@ import type { FieldType } from '@/domain/schema/types';
 
 const NO_EDITOR: ReadonlySet<FieldType> = new Set([
   'checkbox',
-  'link',
   'formula',
   'createdTime',
   'modifiedTime',

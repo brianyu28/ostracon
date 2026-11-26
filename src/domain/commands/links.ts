@@ -23,9 +23,12 @@ export function linkFieldOf(draft: DraftDoc, fieldId: Id): LinkField {
   return field;
 }
 
-function inverseOf(draft: DraftDoc, field: LinkField): LinkField {
+/** The paired field (the field itself when symmetric; undefined for a one-way link). */
+function inverseOf(draft: DraftDoc, field: LinkField): LinkField | undefined {
   if (isSymmetric(field)) return field;
-  const inverse = draft.fields[field.config.inverseFieldId];
+  const inverseId = field.config.inverseFieldId;
+  if (inverseId === undefined) return undefined;
+  const inverse = draft.fields[inverseId];
   if (inverse?.type !== 'link') throw new CommandError('The linked field is missing.');
   return inverse;
 }
@@ -70,7 +73,7 @@ export function changeLinks(
   for (const targetId of add) {
     if (current.has(targetId)) continue;
     // The target's side is single-valued: it leaves its previous record.
-    if (!inverse.config.multiple) {
+    if (inverse && !inverse.config.multiple) {
       for (const previous of linksOf(draft, inverse, targetId, ctx.links)) {
         if (previous !== recordId) unlink(draft, inverse, targetId, previous, now);
       }

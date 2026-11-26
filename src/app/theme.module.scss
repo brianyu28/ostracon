@@ -1,0 +1,19 @@
+@use '@/styles/tokens' as *;
+
+// Dialogs fill the screen on phones (and stay clear of notches and the home indicator).
+.modalInner {
+  @include phone {
+    padding: 0;
+  }
+}
+
+.modalContent {
+  @include phone {
+    flex: 1 0 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding-top: var(--os-safe-top);
+    padding-bottom: var(--os-safe-bottom);
+    border-radius: 0;
+  }
+}

@@ -11,6 +11,7 @@
  * Without a base (first sync between devices), records present on one side are kept,
  * unless the other side's tombstone shows a deletion newer than the record's last edit.
  */
+import { rekeyLinks } from '../links';
 import {
   iterateLinks,
   iterateRecords,
@@ -262,12 +263,21 @@ function repairReferences(doc: DocModel): void {
   for (const f of Object.values(doc.fields)) {
     if (!doc.collections[f.collectionId]) Reflect.deleteProperty(doc.fields, f.id);
   }
-  // A link field whose pair or target is gone (e.g. edited here, deleted there) can't work.
+  // A link field whose target is gone can't work; one whose pair is gone becomes one-way.
   for (const f of Object.values(doc.fields)) {
     if (f.type !== 'link') continue;
-    const inverse = doc.fields[f.config.inverseFieldId];
-    if (inverse?.type !== 'link' || !doc.collections[f.config.targetCollectionId])
+    if (!doc.collections[f.config.targetCollectionId]) {
       Reflect.deleteProperty(doc.fields, f.id);
+      continue;
+    }
+    const inverseId = f.config.inverseFieldId;
+    if (inverseId !== undefined && doc.fields[inverseId]?.type !== 'link') {
+      const config = { ...f.config };
+      delete config.inverseFieldId;
+      doc.fields[f.id] = { ...f, config };
+      // Links stored under the vanished pair move to this field.
+      if (inverseId < f.id) rekeyLinks(doc, inverseId, f.id, true);
+    }
   }
   for (const v of Object.values(doc.views)) {
     if (!doc.collections[v.collectionId]) Reflect.deleteProperty(doc.views, v.id);

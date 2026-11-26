@@ -123,7 +123,7 @@ export function deleteFields(draft: DraftDoc, ids: readonly Id[], now: string): 
     if (!field) continue;
     doomed.add(id);
     if (field.type === 'link') {
-      doomed.add(field.config.inverseFieldId);
+      if (field.config.inverseFieldId !== undefined) doomed.add(field.config.inverseFieldId);
       linkCanonicals.add(canonicalFieldId(field));
     }
   }

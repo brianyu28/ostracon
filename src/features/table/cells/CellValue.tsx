@@ -5,6 +5,8 @@ import type { FormatContext } from '@/domain/fields/model';
 import { fieldType } from '@/domain/fields/registry';
 import type { Field, Id, RecordEntity } from '@/domain/schema/types';
 import { markdownText } from '@/lib/markdown';
+import type { LinkedRecord } from '../linked';
+import { LinkChip } from './LinkChip';
 import { RatingIcons } from './RatingIcons';
 import { timestampText } from './timestamp';
 import styles from './CellValue.module.scss';
@@ -13,8 +15,10 @@ export interface CellValueProps {
   record: RecordEntity;
   field: Field;
   format: FormatContext;
-  /** Titles of linked records (link fields). */
-  linkTitles?: readonly string[];
+  /** Linked records (link fields). */
+  links?: readonly LinkedRecord[];
+  /** Opens a linked record from its chip. */
+  onOpenLink?: (id: Id) => void;
   /** Larger, wrapping layout (record panel) instead of a single table line. */
   wrap?: boolean;
   /** Sets a value directly (checkbox and rating clicks). Omit for read-only display. */
@@ -28,7 +32,8 @@ export const CellValue = memo(function CellValue({
   record,
   field,
   format,
-  linkTitles,
+  links,
+  onOpenLink,
   wrap,
   onSet,
 }: CellValueProps) {
@@ -36,10 +41,19 @@ export const CellValue = memo(function CellValue({
   let content: ReactNode = null;
   switch (field.type) {
     case 'link':
-      content = linkTitles?.map((title, i) => (
-        <span key={i} className={styles.linkChip}>
-          {title}
-        </span>
+      content = links?.map((link) => (
+        <LinkChip
+          key={link.id}
+          onOpen={
+            onOpenLink
+              ? () => {
+                  onOpenLink(link.id);
+                }
+              : undefined
+          }
+        >
+          {link.title}
+        </LinkChip>
       ));
       break;
     case 'createdTime':

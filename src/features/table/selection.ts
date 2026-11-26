@@ -6,6 +6,7 @@ import { fieldType } from '@/domain/fields/registry';
 import { RAW_FORMAT } from '@/domain/fields/model';
 import type { TextRow } from '@/domain/commands';
 import type { Field, Id, RecordEntity, Value } from '@/domain/schema/types';
+import type { LinkReader } from './linked';
 import type { CellRef } from './tableStore';
 
 export interface Rect {
@@ -38,18 +39,17 @@ export function selectionRect(
   };
 }
 
-/** Whether a field's values can be typed, pasted or cleared in the table (Phase 3). */
+/** Whether a field's values can be typed, pasted or cleared in the table. */
 export function isEditable(field: Field): boolean {
-  return field.type !== 'link' && fieldType(field).stored;
+  return field.type === 'link' || fieldType(field).stored;
 }
 
 /** Text of a value for the clipboard: canonical text that pasting reads back. */
-export function clipboardText(
-  record: RecordEntity,
-  field: Field,
-  linkTitles: (record: RecordEntity, field: Field) => string[],
-): string {
-  if (field.type === 'link') return linkTitles(record, field).join(', ');
+export function clipboardText(record: RecordEntity, field: Field, links: LinkReader): string {
+  if (field.type === 'link')
+    return links(record, field)
+      .map((l) => l.title)
+      .join(', ');
   if (field.type === 'createdTime') return record.createdAt.slice(0, 10);
   if (field.type === 'modifiedTime') return record.updatedAt.slice(0, 10);
   const value = record.values[field.id];
@@ -61,15 +61,13 @@ export function copyCells(
   rect: Rect,
   rows: readonly RecordEntity[],
   columns: readonly Field[],
-  linkTitles: (record: RecordEntity, field: Field) => string[],
+  links: LinkReader,
 ): string[][] {
   const out: string[][] = [];
   for (let r = rect.top; r <= rect.bottom; r++) {
     const record = rows[r];
     if (!record) continue;
-    out.push(
-      columns.slice(rect.left, rect.right + 1).map((f) => clipboardText(record, f, linkTitles)),
-    );
+    out.push(columns.slice(rect.left, rect.right + 1).map((f) => clipboardText(record, f, links)));
   }
   return out;
 }
@@ -129,6 +127,7 @@ export function planFillDown(
   rect: Rect,
   rows: readonly RecordEntity[],
   columns: readonly Field[],
+  links: LinkReader = () => [],
 ): { id: Id; values: Record<Id, Value | undefined> }[] {
   const sourceIndex = rect.top === rect.bottom ? rect.top - 1 : rect.top;
   const firstTarget = rect.top === rect.bottom ? rect.top : rect.top + 1;
@@ -141,7 +140,8 @@ export function planFillDown(
     const record = rows[r];
     if (!record) continue;
     const values: Record<Id, Value | undefined> = {};
-    for (const f of fields) values[f.id] = source.values[f.id];
+    for (const f of fields)
+      values[f.id] = f.type === 'link' ? links(source, f).map((l) => l.id) : source.values[f.id];
     updates.push({ id: record.id, values });
   }
   return updates;
@@ -152,13 +152,18 @@ export function planClear(
   rect: Rect,
   rows: readonly RecordEntity[],
   columns: readonly Field[],
+  links: LinkReader = () => [],
 ): { id: Id; values: Record<Id, undefined> }[] {
   const fields = columns.slice(rect.left, rect.right + 1).filter(isEditable);
   if (fields.length === 0) return [];
   const updates = [];
   for (let r = rect.top; r <= rect.bottom; r++) {
     const record = rows[r];
-    if (!record || !fields.some((f) => f.id in record.values)) continue;
+    const filled = (f: Field) =>
+      f.type === 'link'
+        ? links(record as RecordEntity, f).length > 0
+        : f.id in (record as RecordEntity).values;
+    if (!record || !fields.some(filled)) continue;
     updates.push({
       id: record.id,
       values: Object.fromEntries(fields.map((f) => [f.id, undefined])) as Record<Id, undefined>,

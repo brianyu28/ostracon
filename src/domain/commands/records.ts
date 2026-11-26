@@ -4,20 +4,47 @@ import { fieldType } from '../fields/registry';
 import { INVALID, type ParseContext } from '../fields/model';
 import { normalizeOptions, optionByName, splitMulti } from '../fields/types/select';
 import { linksOf, storedLinkKey, type LinkField } from '../links';
-import { getRecord, putRecord, removeLink, removeRecord, type DocModel } from '../model';
+import {
+  getRecord,
+  iterateRecords,
+  putRecord,
+  removeLink,
+  removeRecord,
+  type DocModel,
+} from '../model';
+import { recordTitle } from '../records';
 import type { Field, Id, RecordEntity, Value } from '../schema/types';
-import { CommandError, defineCommand, required, tombstone } from './define';
+import { CommandError, defineCommand, required, tombstone, type CommandContext } from './define';
 import { changeLinks, linkFieldOf } from './links';
 
 type DraftDoc = Draft<DocModel>;
 
-function storedField(draft: DraftDoc, collectionId: Id, fieldId: Id): Field {
+/** A field whose values can be set: stored fields, and links (set as lists of record ids). */
+function editableField(draft: DraftDoc, collectionId: Id, fieldId: Id): Field {
   const field = draft.fields[fieldId];
   if (field?.collectionId !== collectionId)
     throw new CommandError('That field is not in this collection.');
-  if (field.type === 'link') throw new CommandError('Links are edited with the link commands.');
-  if (!fieldType(field).stored) throw new CommandError(`“${field.name}” is calculated.`);
+  if (field.type !== 'link' && !fieldType(field).stored)
+    throw new CommandError(`“${field.name}” is calculated.`);
   return field;
+}
+
+/** Makes `targetIds` exactly the records linked to a record through a link field. */
+function setLinkValue(
+  draft: DraftDoc,
+  field: LinkField,
+  recordId: Id,
+  raw: unknown,
+  ctx: Pick<CommandContext, 'now' | 'links'>,
+): void {
+  if (raw !== undefined && raw !== null && !Array.isArray(raw))
+    throw new CommandError(`That isn’t a valid value for “${field.name}”.`);
+  const targetIds = ((raw as unknown[] | undefined) ?? []).filter(
+    (id): id is Id => typeof id === 'string',
+  );
+  const keep = new Set(targetIds);
+  const remove = linksOf(draft, field, recordId, ctx.links).filter((id) => !keep.has(id));
+  changeLinks(draft, field, recordId, { add: targetIds, remove }, ctx);
 }
 
 /** Normalizes a value for a field, or throws a user-facing error. */
@@ -28,10 +55,23 @@ function normalizeValue(field: Field, value: unknown): Value | undefined {
   return normalized;
 }
 
-/** Applies value changes to a record (undefined or empty clears a value). */
-function applyValues(draft: DraftDoc, record: Draft<RecordEntity>, values: Record<Id, unknown>) {
+/**
+ * Applies value changes to a record (undefined or empty clears a value). Link fields take the
+ * full list of linked record ids.
+ */
+function applyValues(
+  draft: DraftDoc,
+  record: Draft<RecordEntity>,
+  values: Record<Id, unknown>,
+  ctx: Pick<CommandContext, 'now' | 'links'>,
+) {
   for (const [fieldId, raw] of Object.entries(values)) {
-    const value = normalizeValue(storedField(draft, record.collectionId, fieldId), raw);
+    const field = editableField(draft, record.collectionId, fieldId);
+    if (field.type === 'link') {
+      setLinkValue(draft, field, record.id, raw, ctx);
+      continue;
+    }
+    const value = normalizeValue(field, raw);
     if (value === undefined) Reflect.deleteProperty(record.values, fieldId);
     else record.values[fieldId] = value;
   }
@@ -58,7 +98,7 @@ export const createRecord = defineCommand<NewRecord, Id>({
     };
     putRecord(draft, record);
     const draftRecord = required(getRecord(draft, collectionId, record.id), 'Record');
-    applyValues(draft, draftRecord, values);
+    applyValues(draft, draftRecord, values, ctx);
     for (const [fieldId, targetIds] of Object.entries(links)) {
       const field = linkFieldOf(draft, fieldId);
       if (field.collectionId !== collectionId)
@@ -76,9 +116,10 @@ export const setRecordValues = defineCommand<{
   values: Record<Id, unknown>;
 }>({
   label: 'Edit record',
-  run(draft, { collectionId, id, values }, { now }) {
+  run(draft, { collectionId, id, values }, ctx) {
+    const { now } = ctx;
     const record = required(getRecord(draft, collectionId, id), 'Record');
-    applyValues(draft, record, values);
+    applyValues(draft, record, values, ctx);
     record.updatedAt = now;
   },
 });
@@ -91,8 +132,17 @@ export const setFieldValue = defineCommand<{
   value: unknown;
 }>({
   label: 'Edit records',
-  run(draft, { collectionId, ids, fieldId, value }, { now }) {
-    const field = storedField(draft, collectionId, fieldId);
+  run(draft, { collectionId, ids, fieldId, value }, ctx) {
+    const { now } = ctx;
+    const field = editableField(draft, collectionId, fieldId);
+    if (field.type === 'link') {
+      for (const id of ids) {
+        const record = required(getRecord(draft, collectionId, id), 'Record');
+        setLinkValue(draft, field, id, value, ctx);
+        record.updatedAt = now;
+      }
+      return;
+    }
     const normalized = normalizeValue(field, value);
     for (const id of ids) {
       const record = required(getRecord(draft, collectionId, id), 'Record');
@@ -109,10 +159,11 @@ export const editRecords = defineCommand<{
   updates: readonly { id: Id; values: Record<Id, unknown> }[];
 }>({
   label: 'Edit records',
-  run(draft, { collectionId, updates }, { now }) {
+  run(draft, { collectionId, updates }, ctx) {
+    const { now } = ctx;
     for (const { id, values } of updates) {
       const record = required(getRecord(draft, collectionId, id), 'Record');
-      applyValues(draft, record, values);
+      applyValues(draft, record, values, ctx);
       record.updatedAt = now;
     }
   },
@@ -144,9 +195,11 @@ export const setFromText = defineCommand<
   TextResult
 >({
   label: 'Edit records',
-  run(draft, { collectionId, rows, parse }, { now, newId }) {
+  run(draft, { collectionId, rows, parse }, ctx) {
+    const { now, newId } = ctx;
     required(draft.collections[collectionId], 'Collection');
     const result: TextResult = { created: [], invalid: 0, addedOptions: 0 };
+    const titles = new Map<Id, Map<string, Id>>();
     for (const row of rows) {
       let record: Draft<RecordEntity> | undefined;
       if (row.id === undefined) {
@@ -162,7 +215,22 @@ export const setFromText = defineCommand<
         const field = draft.fields[fieldId];
         if (field?.collectionId !== collectionId)
           throw new CommandError('That field is not in this collection.');
-        if (field.type === 'link' || !fieldType(field).stored) continue;
+        if (field.type === 'link') {
+          const ids = linkIdsFromText(draft, field, text, titles);
+          if (ids === null || (!field.config.multiple && ids.length > 1)) {
+            result.invalid++;
+            continue;
+          }
+          setLinkValue(
+            draft,
+            field,
+            record.id,
+            ids.filter((id) => id !== record.id),
+            ctx,
+          );
+          continue;
+        }
+        if (!fieldType(field).stored) continue;
         if (field.type === 'singleSelect' || field.type === 'multiSelect') {
           const names = field.type === 'multiSelect' ? splitMulti(text) : [text.trim()];
           const missing = names.filter((n) => n && !optionByName(field.config.options, n));
@@ -194,6 +262,86 @@ export const setFromText = defineCommand<
 });
 
 /**
+ * Record ids named by pasted text: the whole text as one title, or titles separated by commas,
+ * semicolons or lines. Titles match case-insensitively (the earliest record wins a tie).
+ * Returns null when a title matches no record.
+ */
+function linkIdsFromText(
+  draft: DraftDoc,
+  field: LinkField,
+  text: string,
+  cache: Map<Id, Map<string, Id>>,
+): Id[] | null {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const target = field.config.targetCollectionId;
+  let byTitle = cache.get(target);
+  if (!byTitle) {
+    byTitle = new Map();
+    const records = [...iterateRecords(draft, target)].sort((a, b) =>
+      a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0,
+    );
+    for (const r of records) {
+      const key = recordTitle(draft, r).toLowerCase();
+      if (!byTitle.has(key)) byTitle.set(key, r.id);
+    }
+    cache.set(target, byTitle);
+  }
+  const whole = byTitle.get(trimmed.toLowerCase());
+  if (whole) return [whole];
+  const ids: Id[] = [];
+  for (const name of trimmed
+    .split(/[,;\n]/)
+    .map((n) => n.trim())
+    .filter(Boolean)) {
+    const id = byTitle.get(name.toLowerCase());
+    if (!id) return null;
+    ids.push(id);
+  }
+  return ids;
+}
+
+/**
+ * Creates a record in a link field's target collection, titled `title`, and links it (one undo
+ * step). `targetIds`, when given, first sets the field's other links (picks made in the same
+ * editor).
+ */
+export const createLinkedRecord = defineCommand<
+  { fieldId: Id; recordId: Id; title: string; targetIds?: readonly Id[] },
+  Id
+>({
+  label: 'Add linked record',
+  run(draft, { fieldId, recordId, title, targetIds }, ctx) {
+    const { now, newId } = ctx;
+    const field = linkFieldOf(draft, fieldId);
+    const record = required(getRecord(draft, field.collectionId, recordId), 'Record');
+    const targetCollection = required(
+      draft.collections[field.config.targetCollectionId],
+      'Linked collection',
+    );
+    const primary = draft.fields[targetCollection.primaryFieldId];
+    const id = newId('record');
+    putRecord(draft, {
+      id,
+      collectionId: targetCollection.id,
+      values: {},
+      createdAt: now,
+      updatedAt: now,
+    });
+    const created = required(getRecord(draft, targetCollection.id, id), 'Record');
+    if (primary && fieldType(primary).stored && title.trim())
+      applyValues(draft, created, { [primary.id]: title }, ctx);
+    // One change, so the new record lands after the other picks.
+    const others = field.config.multiple
+      ? (targetIds ?? linksOf(draft, field, recordId, ctx.links))
+      : [];
+    setLinkValue(draft, field, recordId, [...others, id], ctx);
+    record.updatedAt = now;
+    return id;
+  },
+});
+
+/**
  * Copies records with their values and links. Links whose other side is single-valued aren't
  * copied (the copy would take the link away from the original).
  */
@@ -216,8 +364,9 @@ export const duplicateRecords = defineCommand<{ collectionId: Id; ids: readonly 
       };
       putRecord(draft, copy);
       for (const field of linkFields) {
-        const inverse = base.fields[field.config.inverseFieldId];
-        if (inverse?.type !== 'link' || !inverse.config.multiple) continue;
+        const inverseId = field.config.inverseFieldId;
+        const inverse = inverseId === undefined ? undefined : base.fields[inverseId];
+        if (inverse && (inverse.type !== 'link' || !inverse.config.multiple)) continue;
         const targets = linksOf(base, field, id, ctx.links);
         if (targets.length) changeLinks(draft, field, copy.id, { add: targets }, ctx);
       }

@@ -1,9 +1,10 @@
 import { clsx } from 'clsx';
 import type { ReactNode } from 'react';
 import type { FormatContext } from '@/domain/fields/model';
-import type { Field, RecordEntity } from '@/domain/schema/types';
+import type { Field, Id, RecordEntity } from '@/domain/schema/types';
 import { CellValue } from './cells/CellValue';
 import type { Column } from './columns';
+import type { LinkedRecord, LinkReader } from './linked';
 import styles from './TableView.module.scss';
 
 interface TableCellProps {
@@ -16,7 +17,9 @@ interface TableCellProps {
   /** The editor, when this cell is being edited. */
   editor: ReactNode;
   format: FormatContext;
-  linkTitles: (record: RecordEntity, field: Field) => string[];
+  links: LinkReader;
+  /** Opens a linked record (from a chip in the cursor's cell). */
+  onOpenLink?: ((field: Field, id: Id) => void) | undefined;
   handlers: CellHandlers;
 }
 
@@ -24,10 +27,12 @@ export interface CellHandlers {
   onMouseDown: (row: number, col: number, e: React.MouseEvent) => void;
   onMouseEnter: (row: number, col: number) => void;
   onDoubleClick: (row: number, col: number) => void;
+  /** A touch tap, before the mouse events it also produces. */
+  onTap: (row: number, col: number) => void;
   onSet: (record: RecordEntity, field: Field, value: unknown) => void;
 }
 
-function isEmpty(record: RecordEntity, field: Field, links: string[] | undefined): boolean {
+function isEmpty(record: RecordEntity, field: Field, links: LinkedRecord[] | undefined): boolean {
   if (field.type === 'link') return !links?.length;
   return !(field.id in record.values);
 }
@@ -42,11 +47,12 @@ export function TableCell({
   inRange,
   editor,
   format,
-  linkTitles,
+  links: readLinks,
+  onOpenLink,
   handlers,
 }: TableCellProps) {
   const { field, width, primary, left } = column;
-  const links = field.type === 'link' ? linkTitles(record, field) : undefined;
+  const links = field.type === 'link' ? readLinks(record, field) : undefined;
   const missing = field.required === true && isEmpty(record, field, links);
   return (
     <div
@@ -61,6 +67,10 @@ export function TableCell({
         missing && styles.missing,
       )}
       style={{ width, ...(primary ? { left } : {}) }}
+      onPointerDown={(e) => {
+        // Touch: a tap on the selected cell edits it (double-tap isn't reliable on phones).
+        if (e.pointerType === 'touch') handlers.onTap(rowIndex, colIndex);
+      }}
       onMouseDown={(e) => {
         handlers.onMouseDown(rowIndex, colIndex, e);
       }}
@@ -76,7 +86,14 @@ export function TableCell({
           record={record}
           field={field}
           format={format}
-          {...(links ? { linkTitles: links } : {})}
+          {...(links ? { links } : {})}
+          {...(onOpenLink && isCursor && field.type === 'link'
+            ? {
+                onOpenLink: (id: Id) => {
+                  onOpenLink(field, id);
+                },
+              }
+            : {})}
           {...(field.type === 'checkbox' || field.type === 'rating'
             ? {
                 onSet: (value: unknown) => {
