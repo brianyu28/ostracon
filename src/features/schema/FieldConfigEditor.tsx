@@ -55,10 +55,9 @@ export function FieldConfigEditor(props: FieldConfigEditorProps) {
       if (v === undefined) Reflect.deleteProperty(next, k);
     onChange(next);
   };
-  const flag = (key: string, label: string, description?: string) => (
+  const flag = (key: string, label: string) => (
     <Checkbox
       label={label}
-      description={description}
       checked={config[key] === true}
       onChange={(e) => {
         set({ [key]: e.currentTarget.checked ? true : undefined });
@@ -123,11 +122,7 @@ export function FieldConfigEditor(props: FieldConfigEditorProps) {
       );
     case 'date':
     case 'dateRange':
-      return flag(
-        'partial',
-        'Allow year or month only',
-        'For things you only remember roughly, e.g. “2014” or “July 2019”.',
-      );
+      return flag('partial', 'Allow partial dates');
     case 'singleSelect':
     case 'multiSelect':
       return (

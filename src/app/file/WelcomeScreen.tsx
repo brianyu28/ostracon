@@ -37,9 +37,7 @@ export function WelcomeScreen() {
   return (
     <div className={styles.root}>
       <h2 className={styles.title}>Welcome to Ostracon</h2>
-      <p className={styles.lede}>
-        Keep records about the things in your life (people, places, books, trips) in a file you own.
-      </p>
+      <p className={styles.lede}>Keep records about anything</p>
       {loadError && (
         <Alert
           className={styles.error}

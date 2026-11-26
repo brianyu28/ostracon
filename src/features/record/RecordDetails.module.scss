@@ -1,0 +1,146 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.page {
+  max-width: 760px;
+}
+
+.title {
+  font-size: $font-xl;
+  font-weight: 600;
+}
+
+.page .title {
+  font-size: 22px;
+}
+
+.titleButton {
+  display: block;
+  width: 100%;
+  padding: 2px $space-1;
+  margin: 0 (-$space-1);
+  overflow-wrap: anywhere;
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: var(--os-surface-hover);
+  }
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: $space-2;
+  align-items: start;
+  min-height: 30px;
+}
+
+.page .field {
+  grid-template-columns: 180px 1fr;
+
+  @include phone {
+    grid-template-columns: 112px 1fr;
+  }
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 6px;
+  overflow: hidden;
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+  white-space: nowrap;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.icon {
+  flex: none;
+  color: var(--os-text-faint);
+}
+
+.value {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+}
+
+.valueButton,
+.static {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 5px $space-1;
+  border-radius: $radius-sm;
+}
+
+.valueButton:hover {
+  background: var(--os-surface-hover);
+}
+
+.placeholder {
+  color: var(--os-text-faint);
+}
+
+.missing {
+  background: color-mix(in srgb, var(--os-warning) 9%, transparent);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  padding: 4px $space-1;
+}
+
+.linkChip {
+  padding: 0 6px;
+  font-size: $font-sm;
+  line-height: 20px;
+  color: var(--os-text);
+  text-decoration: none;
+  background: var(--os-surface-hover);
+  border: 1px solid var(--os-border);
+  border-radius: $radius-sm;
+
+  &:hover {
+    border-color: var(--os-accent);
+  }
+}
+
+.meta {
+  font-size: $font-xs;
+  color: var(--os-text-faint);
+}
+
+.withAction {
+  display: flex;
+  gap: 2px;
+  align-items: flex-start;
+
+  > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  > :last-child {
+    margin-top: 2px;
+  }
+}

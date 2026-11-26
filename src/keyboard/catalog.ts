@@ -13,9 +13,16 @@ export interface CommandInfo {
   allowInInputs?: boolean;
 }
 
-export type CommandGroup = 'General' | 'Navigation' | 'File' | 'Edit' | 'Collections';
+export type CommandGroup = 'General' | 'Navigation' | 'File' | 'Edit' | 'Collections' | 'Records';
 
-export const COMMAND_GROUPS: readonly CommandGroup[] = ['General', 'Navigation', 'File', 'Edit'];
+export const COMMAND_GROUPS: readonly CommandGroup[] = [
+  'General',
+  'Navigation',
+  'File',
+  'Edit',
+  'Collections',
+  'Records',
+];
 
 export const COMMANDS = [
   // General
@@ -56,6 +63,24 @@ export const COMMANDS = [
   { id: 'collection.new', title: 'New collection…', group: 'Collections', keys: [] },
   { id: 'collection.addField', title: 'Add field…', group: 'Collections', keys: ['mod+shift+f'] },
   { id: 'collection.settings', title: 'Collection settings…', group: 'Collections', keys: [] },
+  // Records (the table types into cells, so its record shortcuts avoid bare letters)
+  { id: 'record.new', title: 'New record', group: 'Records', keys: ['n', 'mod+shift+enter'] },
+  {
+    id: 'record.togglePanel',
+    title: 'Show or hide the record panel',
+    group: 'Records',
+    keys: ['space'],
+  },
+  {
+    id: 'record.select',
+    title: 'Select or unselect the row',
+    group: 'Records',
+    keys: ['shift+space'],
+  },
+  { id: 'record.open', title: 'Open record as a page', group: 'Records', keys: ['mod+enter'] },
+  { id: 'record.duplicate', title: 'Duplicate records', group: 'Records', keys: ['mod+shift+d'] },
+  { id: 'record.delete', title: 'Delete records', group: 'Records', keys: ['mod+backspace'] },
+  { id: 'table.fillDown', title: 'Fill down', group: 'Records', keys: ['mod+d'] },
 ] as const satisfies readonly CommandInfo[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

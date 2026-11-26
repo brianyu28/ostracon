@@ -1,0 +1,102 @@
+@use '@/styles/tokens' as *;
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// Text that overflows needs a block box for the ellipsis; chips stay in a row.
+.value:not(:has(> *)) {
+  display: block;
+}
+
+.wrap {
+  flex-wrap: wrap;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.numeric {
+  @include tabular;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.linkChip {
+  flex: none;
+  max-width: 100%;
+  padding: 0 6px;
+  overflow: hidden;
+  font-size: $font-sm;
+  line-height: 18px;
+  color: var(--os-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--os-surface-hover);
+  border: 1px solid var(--os-border);
+  border-radius: $radius-sm;
+}
+
+.link {
+  overflow: hidden;
+  color: var(--os-accent);
+  text-decoration: none;
+  text-overflow: ellipsis;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.thumb {
+  max-height: calc(var(--os-row-height) - 6px);
+  border-radius: 2px;
+}
+
+.wrap .thumb {
+  max-height: 160px;
+  max-width: 100%;
+}
+
+.checkbox {
+  margin: 0;
+  accent-color: var(--os-accent);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.rating {
+  display: inline-flex;
+  gap: 1px;
+  letter-spacing: 0;
+}
+
+.ratingIcon {
+  color: var(--os-border);
+  line-height: 1;
+}
+
+.ratingOn {
+  color: var(--os-accent);
+}
+
+.ratingClickable {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--os-text-faint);
+  }
+
+  &.ratingOn:hover {
+    color: var(--os-accent);
+    opacity: 0.8;
+  }
+}

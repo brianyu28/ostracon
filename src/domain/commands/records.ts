@@ -1,7 +1,8 @@
 /** Record commands. Values are normalized by their field's type; links go through `links.ts`. */
 import { original, type Draft } from 'immer';
 import { fieldType } from '../fields/registry';
-import { INVALID } from '../fields/model';
+import { INVALID, type ParseContext } from '../fields/model';
+import { normalizeOptions, optionByName, splitMulti } from '../fields/types/select';
 import { linksOf, storedLinkKey, type LinkField } from '../links';
 import { getRecord, putRecord, removeLink, removeRecord, type DocModel } from '../model';
 import type { Field, Id, RecordEntity, Value } from '../schema/types';
@@ -99,6 +100,96 @@ export const setFieldValue = defineCommand<{
       else record.values[fieldId] = structuredClone(normalized);
       record.updatedAt = now;
     }
+  },
+});
+
+/** Sets values on many records at once (fill down, clearing a range): one undo step. */
+export const editRecords = defineCommand<{
+  collectionId: Id;
+  updates: readonly { id: Id; values: Record<Id, unknown> }[];
+}>({
+  label: 'Edit records',
+  run(draft, { collectionId, updates }, { now }) {
+    for (const { id, values } of updates) {
+      const record = required(getRecord(draft, collectionId, id), 'Record');
+      applyValues(draft, record, values);
+      record.updatedAt = now;
+    }
+  },
+});
+
+export interface TextRow {
+  /** The record to change; a new record is created when absent. */
+  id?: Id;
+  /** Typed or pasted text per field ('' clears). */
+  texts: Record<Id, string>;
+}
+
+export interface TextResult {
+  /** Ids of the records created for rows without an id. */
+  created: Id[];
+  /** Cells whose text isn't a value of their field (left unchanged). */
+  invalid: number;
+  /** Select options created for names that didn't exist yet. */
+  addedOptions: number;
+}
+
+/**
+ * Sets values from text, parsed by each field's type, as one undo step: pasting a range, or
+ * typing a new option into a select. Unknown select names become new options; text that
+ * isn't a value of its field is skipped and counted. Calculated and link fields are skipped.
+ */
+export const setFromText = defineCommand<
+  { collectionId: Id; rows: readonly TextRow[]; parse: ParseContext },
+  TextResult
+>({
+  label: 'Edit records',
+  run(draft, { collectionId, rows, parse }, { now, newId }) {
+    required(draft.collections[collectionId], 'Collection');
+    const result: TextResult = { created: [], invalid: 0, addedOptions: 0 };
+    for (const row of rows) {
+      let record: Draft<RecordEntity> | undefined;
+      if (row.id === undefined) {
+        const id = newId('record');
+        putRecord(draft, { id, collectionId, values: {}, createdAt: now, updatedAt: now });
+        result.created.push(id);
+        record = getRecord(draft, collectionId, id);
+      } else {
+        record = getRecord(draft, collectionId, row.id);
+      }
+      if (!record) throw new CommandError('Record not found');
+      for (const [fieldId, text] of Object.entries(row.texts)) {
+        const field = draft.fields[fieldId];
+        if (field?.collectionId !== collectionId)
+          throw new CommandError('That field is not in this collection.');
+        if (field.type === 'link' || !fieldType(field).stored) continue;
+        if (field.type === 'singleSelect' || field.type === 'multiSelect') {
+          const names = field.type === 'multiSelect' ? splitMulti(text) : [text.trim()];
+          const missing = names.filter((n) => n && !optionByName(field.config.options, n));
+          if (missing.length) {
+            const config = normalizeOptions(
+              { options: [...field.config.options, ...missing.map((name) => ({ name }))] },
+              { settings: draft.settings, newId },
+            );
+            if (typeof config === 'string') {
+              result.invalid++;
+              continue;
+            }
+            field.config = config;
+            result.addedOptions += missing.length;
+          }
+        }
+        const value = fieldType(field).parse(text, field, parse);
+        if (value === INVALID) {
+          result.invalid++;
+          continue;
+        }
+        if (value === undefined) Reflect.deleteProperty(record.values, fieldId);
+        else record.values[fieldId] = value;
+      }
+      record.updatedAt = now;
+    }
+    return result;
   },
 });
 

@@ -207,7 +207,6 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
         onChange={(value) => {
           if (value) changeType(value);
         }}
-        description={isPrimary ? 'This is the primary field, so it stays text.' : undefined}
       />
       <div className={styles.config}>
         <FieldConfigEditor
@@ -236,7 +235,6 @@ function FieldForm({ target, onClose }: { target: FieldEditorTarget; onClose: ()
       {fieldType(type).stored && (
         <Checkbox
           label="Required"
-          description="Highlights records where it’s empty. Never blocks saving."
           checked={required}
           onChange={(e) => {
             setRequired(e.currentTarget.checked);

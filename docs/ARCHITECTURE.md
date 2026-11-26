@@ -48,7 +48,7 @@ src/
     fields/       Field type registry (one definition per type), operators, formatting, type changes
     links.ts      Link pairs: canonical storage, keys, lookups
     records.ts    Record titles and value text
-    views/        View repair (keeping views consistent with their fields)
+    views/        View repair (keeping views consistent with their fields), row order (rows.ts)
     commands/     Every document mutation, as a named command
     aggregates/   DocIndex (incremental indexes: record counts, link sides)
     sync/         Three-way document merge
@@ -59,9 +59,10 @@ src/
   workers/      io.worker.ts: parse, migrate, validate and serialize off the main thread
   keyboard/     Command catalog, key bindings, dispatcher, command palette
   components/   Shared UI components
-  features/     One folder per screen or area: home, collection, schema (collection and field
-                editing dialogs), settings
-  lib/          Small pure utilities: dates, ids, formatting
+  features/     One folder per screen or area: home, collection (page, bulk bar, phone list),
+                table (grid, cells, editors), record (panel and page), schema (collection
+                and field editing dialogs), settings
+  lib/          Small pure utilities: dates, ids, formatting, TSV, the Markdown subset
   styles/       SCSS tokens and global color variables
 scripts/        gen-demo.ts (synthetic data files), gen-icons.ts
 bench/          Performance benchmarks against a synthetic ~50k-record file
@@ -271,6 +272,33 @@ usable field (or back to a table). Commands run it after every field change; `up
 rejects settings that repair would change. A view's field list always covers every field
 (missing ones are kept, hidden, at the end).
 
+`views/rows.ts` gives a view's records in order: by its sorts (empty values last), then creation
+order. The collection page memoizes it on the collection's index version, so edits elsewhere
+don't re-sort. Filters and grouping join it in Phase 4.
+
+### The table
+
+`features/table/` is the table layout: a virtualized grid (one scroll element for both axes, a
+sticky header, a frozen gutter and primary column) driven by `tableStore`, which holds the cell
+cursor, the range anchor, the cell being edited, checked rows and whether the record panel is
+open. Cells are addressed by record and field id, so the cursor stays on its record when rows
+re-sort. The grid is one focusable element; keys are handled there (`navigation.ts` for
+movement) and typing a character starts editing. Commands that act on records are in the
+keyboard catalog and avoid bare letters, so they don't collide with typing.
+
+Range work is pure and tested in `selection.ts`: copying writes canonical text (each type's
+`raw` format) as TSV, pasting plans per-cell text (a single cell fills the range; a block adds
+rows past the end) and dispatches one `setFromText` command, which parses each cell by its type
+and creates missing select options in the same undo step. Fill down and clearing dispatch
+`editRecords`.
+
+Editors (`table/editors/`) share one contract: they produce a value or text change and commit
+on Enter or Tab, cancel on Esc, and save a pending change if they close any other way (a click
+elsewhere). The same editors serve table cells, the record panel and bulk "Set field".
+`record/RecordDetails` lists every field of a record and is both the side panel and the record
+page (`#/c/<collectionId>/r/<recordId>`, also the phone view of a record). Phones get a list
+instead of the grid.
+
 ## 9. Indexes
 
 `DocIndex` (`aggregates/docIndex.ts`) is built once on load and then updated per touched record
@@ -360,13 +388,15 @@ envelope:
 
 `public/_headers` sets the production headers (`pnpm preview` applies the same ones). The CSP
 allows scripts from this origin only and network requests to this origin and Dropbox's API only.
-It also requires **Trusted Types**: code-loading sinks accept only values from the single
+Images may load from any `https:` origin, for URL fields shown as thumbnails (opt-in per
+field). It also requires **Trusted Types**: code-loading sinks accept only values from the single
 `default` policy in `src/app/trustedTypes.ts`, which rejects any HTML containing markup.
 
 ## 11. UI conventions
 
 - **Routing**: hash-based (`#/path`). Each screen is one entry in `app/routes.ts` plus a lazily
-  loaded page in `features/<name>/`. Collections live at `#/c/<collectionId>/<viewId?>`.
+  loaded page in `features/<name>/`. Collections live at `#/c/<collectionId>/<viewId?>` and
+  records at `#/c/<collectionId>/r/<recordId>`.
 - **Keyboard**: declare every command once in `keyboard/catalog.ts` and attach handlers with
   `useCommandHandlers`. Shortcuts, the ⌘K palette, the `?` overlay and Settings → Keyboard all
   read the catalog, and users can rebind any command. `g h` goes home, `g 1`…`g 9` to a
@@ -397,7 +427,8 @@ keyboard command in the catalog if it deserves one.
 
 **Add a field type.** Add `FieldType` to the schema (`current.ts`, a schema change), write its
 definition in `fields/types/`, register it in `fields/registry.ts` (and `FIELD_TYPE_ORDER`),
-cover it in `fields/types.test.ts`, then add its cell renderer and editor in the UI.
+cover it in `fields/types.test.ts`, then add its display to `table/cells/CellValue.tsx`, its
+editor to `table/editors/ValueEditor.tsx` and its config to `schema/FieldConfigEditor.tsx`.
 
 **Before finishing any change.** Run `pnpm check`, and `pnpm bench` if you touched commands,
 the index or anything that runs per record. Never commit real personal data; use
@@ -409,4 +440,4 @@ the index or anything that runs per record. Never commit real personal data; use
 and devices; ~60k links, 20 MB) and fails if a target is missed. Current results on a laptop:
 parse + validate + integrity ~380 ms, serialize ~120 ms, index build ~75 ms, one edit ~0.1 ms,
 setting one record's links ~1 ms, adding a field 0.2 ms, bulk-setting or retyping a field on
-22k records ~200 ms.
+22k records ~200 ms, pasting 1,000 rows ~10 ms, ordering a 22k-record view ~35 ms.

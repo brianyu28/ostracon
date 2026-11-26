@@ -27,10 +27,7 @@ export function HomePage() {
         </Button>
       </div>
       {list.length === 0 ? (
-        <p className={styles.empty}>
-          A collection holds records about one kind of thing: people, restaurants, books, trips.
-          Create one to get started.
-        </p>
+        <p className={styles.empty}>Create a collection to get started.</p>
       ) : (
         <div className={styles.grid}>
           {list.map((c) => (

@@ -28,6 +28,7 @@
 .count {
   font-size: $font-sm;
   color: var(--os-text-dim);
+  white-space: nowrap;
 }
 
 .actions {
@@ -37,44 +38,16 @@
   margin-left: auto;
 }
 
-.scroller {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+.badge {
+  font-size: $font-xs;
+  color: var(--os-text-faint);
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-variant-numeric: tabular-nums;
-
-  th {
-    position: sticky;
-    top: 0;
-    height: var(--os-row-height);
-    padding: 0 $space-2;
-    font-size: $font-xs;
-    font-weight: 500;
-    color: var(--os-text-faint);
-    text-align: left;
-    white-space: nowrap;
-    background: var(--os-bg);
-    border-bottom: 1px solid var(--os-border);
-  }
-
-  td {
-    max-width: 320px;
-    height: var(--os-row-height);
-    padding: 0 $space-2;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    border-bottom: 1px solid var(--os-border);
-  }
-
-  tr:hover td {
-    background: var(--os-surface);
-  }
+.body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 .empty {
@@ -83,18 +56,88 @@
   color: var(--os-text-dim);
 }
 
-.columnHeader {
-  display: inline-flex;
+// ── Bulk actions ──────────────────────────────────────────────────────────
+
+.bulk {
+  display: flex;
   align-items: center;
   gap: $space-1;
-  max-width: 100%;
-  overflow: hidden;
-  color: inherit;
-  font: inherit;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  padding: $space-1 $space-3;
+  background: var(--os-surface-active);
+  border-bottom: 1px solid var(--os-border);
+}
 
-  &:hover {
-    color: var(--os-text);
+.bulkCount {
+  margin-right: $space-2;
+  font-weight: 600;
+}
+
+.bulkEditor {
+  min-height: 40px;
+}
+
+.bulkHint {
+  margin: $space-2 0 0;
+  font-size: $font-xs;
+  color: var(--os-text-faint);
+}
+
+// ── Fields menu ───────────────────────────────────────────────────────────
+
+.fieldsMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.fieldsMenuLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+// ── Phone list ────────────────────────────────────────────────────────────
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.listItem {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  height: 52px;
+  padding: 0 $space-3;
+  color: var(--os-text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--os-border);
+
+  &:active {
+    background: var(--os-surface-hover);
   }
+}
+
+.listTitle,
+.listSummary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listTitle {
+  font-weight: 500;
+}
+
+.listSummary {
+  font-size: $font-sm;
+  color: var(--os-text-dim);
 }

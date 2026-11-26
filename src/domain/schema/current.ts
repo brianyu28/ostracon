@@ -60,7 +60,7 @@ export const FileSettingsSchema = z.object({
 export const CollectionSchema = z.object({
   id: IdSchema,
   name: NameSchema,
-  /** Key into the curated icon set (`components/CollectionIcon`). */
+  /** Key into the curated icon set (`components/CollectionIcon`), or an emoji. */
   icon: z.string().max(40).optional(),
   color: ColorSchema.optional(),
   description: DescriptionSchema.optional(),

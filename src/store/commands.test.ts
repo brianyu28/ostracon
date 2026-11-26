@@ -434,3 +434,58 @@ describe('views', () => {
     expectIntact();
   });
 });
+
+describe('editing many records', () => {
+  const parse = { locale: 'en-US', today: '2026-11-26' };
+
+  it('sets values from text, creating select options and new rows, as one undo step', () => {
+    const c = collectionWithPrimary('Books');
+    const status = run('createField', {
+      collectionId: c.id,
+      name: 'Status',
+      type: 'singleSelect',
+      config: { options: [{ name: 'Read' }] },
+    });
+    const pages = run('createField', { collectionId: c.id, name: 'Pages', type: 'number' });
+    const a = record(c.id, c.primary, 'A');
+    const result = run('setFromText', {
+      collectionId: c.id,
+      parse,
+      rows: [
+        { id: a, texts: { [status]: 'read', [pages]: '1,200' } },
+        { texts: { [c.primary]: 'B', [status]: 'Wishlist', [pages]: 'lots' } },
+      ],
+    });
+    expect(result).toMatchObject({ invalid: 1, addedOptions: 1 });
+    expect(result.created).toHaveLength(1);
+    const field = doc().fields[status] as FieldOf<'singleSelect'>;
+    expect(field.config.options.map((o) => o.name)).toEqual(['Read', 'Wishlist']);
+    const [readId, wishId] = field.config.options.map((o) => o.id);
+    expect(getRecord(doc(), c.id, a)?.values).toMatchObject({ [status]: readId, [pages]: 1200 });
+    const b = getRecord(doc(), c.id, result.created[0]!);
+    expect(b?.values).toEqual({ [c.primary]: 'B', [status]: wishId });
+    expectIntact();
+
+    store.getState().undo();
+    expect((doc().fields[status] as FieldOf<'singleSelect'>).config.options).toHaveLength(1);
+    expect([...iterateRecords(doc(), c.id)]).toHaveLength(1);
+  });
+
+  it('clears and copies values across records with editRecords', () => {
+    const c = collectionWithPrimary('Books');
+    const a = record(c.id, c.primary, 'A');
+    const b = record(c.id, c.primary, 'B');
+    run('editRecords', {
+      collectionId: c.id,
+      updates: [
+        { id: a, values: { [c.primary]: undefined } },
+        { id: b, values: { [c.primary]: 'Same' } },
+      ],
+    });
+    expect(getRecord(doc(), c.id, a)?.values).toEqual({});
+    expect(getRecord(doc(), c.id, b)?.values).toEqual({ [c.primary]: 'Same' });
+    expect(() => {
+      run('editRecords', { collectionId: c.id, updates: [{ id: a, values: { nope: 'x' } }] });
+    }).toThrow(CommandError);
+  });
+});

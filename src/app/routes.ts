@@ -8,6 +8,9 @@ const HomePage = lazy(() =>
 const CollectionPage = lazy(() =>
   import('@/features/collection/CollectionPage').then((m) => ({ default: m.CollectionPage })),
 );
+const RecordPage = lazy(() =>
+  import('@/features/record/RecordPage').then((m) => ({ default: m.RecordPage })),
+);
 const SettingsPage = lazy(() =>
   import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
@@ -32,6 +35,11 @@ export function collectionPath(collectionId: string, viewId?: string): string {
   return viewId ? `/c/${collectionId}/${viewId}` : `/c/${collectionId}`;
 }
 
+/** Path of a record's own page. */
+export function recordPath(collectionId: string, recordId: string): string {
+  return `/c/${collectionId}/r/${recordId}`;
+}
+
 /** Single source of truth for navigation: drives the router, sidebar and bottom nav. */
 export const routes: readonly AppRoute[] = [
   { path: '/', title: 'Home', icon: IconHome, component: HomePage, primary: true },
@@ -41,6 +49,14 @@ export const routes: readonly AppRoute[] = [
     icon: IconHome,
     component: CollectionPage,
     match: '/c/:collectionId/:viewId?',
+    hidden: true,
+  },
+  {
+    path: '/r',
+    title: 'Record',
+    icon: IconHome,
+    component: RecordPage,
+    match: '/c/:collectionId/r/:recordId',
     hidden: true,
   },
   {

@@ -4,9 +4,10 @@
  */
 import { DocIndex } from '../src/domain/aggregates/docIndex';
 import { generateDemoDocument } from '../src/domain/demo/generate';
-import { countLinks, countRecords, iterateRecords } from '../src/domain/model';
+import { countLinks, countRecords, iterateRecords, type DocModel } from '../src/domain/model';
 import { parseDocument } from '../src/domain/schema/document';
 import type { Field } from '../src/domain/schema/types';
+import { viewRecords } from '../src/domain/views/rows';
 import { serializeModel } from '../src/persistence/codec/serialize';
 import { createDocStore } from '../src/store/docStore';
 
@@ -137,6 +138,37 @@ const cases: Case[] = [
         fieldId: notes.id,
         value: `Bulk ${String(n++)}`,
       });
+    },
+  },
+  {
+    name: 'Paste 1,000 rows × 2 columns (text, parsed)',
+    targetMs: 60,
+    runs: 5,
+    fn: () => {
+      const start = (n++ * 1000) % (visitIds.length - 1000);
+      dispatch('setFromText', {
+        collectionId: visits.collectionId,
+        parse: { locale: 'en-US', today: '2026-11-26' },
+        rows: visitIds.slice(start, start + 1000).map((id, i) => ({
+          id,
+          texts: { [notes.id]: `Pasted ${String(i)}`, [retypeFields[0] ?? '']: 'A' },
+        })),
+      });
+    },
+  },
+  {
+    name: 'Order a 22k-record view (sorted by a text field)',
+    targetMs: 120,
+    runs: 5,
+    fn: () => {
+      const view = Object.values(store.getState().doc?.views ?? {}).find(
+        (v) => v.collectionId === visits.collectionId,
+      );
+      if (view)
+        void viewRecords(store.getState().doc as DocModel, {
+          ...view,
+          sorts: [{ fieldId: notes.id, dir: 'asc' }],
+        });
     },
   },
   {

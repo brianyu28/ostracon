@@ -1,5 +1,6 @@
 /**
- * Thin wrappers around dnd-kit for vertical drag-and-drop reordering. Items are dragged
+ * Thin wrappers around dnd-kit for drag-and-drop reordering (vertical lists, or horizontal
+ * ones such as table columns). Items are dragged
  * by a handle (so clicks elsewhere in the row still work) and can also be moved with the
  * keyboard: focus the handle, press Space, use the arrow keys, Space again to drop.
  */
@@ -18,6 +19,7 @@ import {
   SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { IconGripVertical } from '@tabler/icons-react';
@@ -26,6 +28,9 @@ import type { SortableItem } from './useSortableItem';
 import styles from './Sortable.module.scss';
 
 const verticalOnly: Modifier = ({ transform }) => ({ ...transform, x: 0 });
+const horizontalOnly: Modifier = ({ transform }) => ({ ...transform, y: 0 });
+
+export type SortAxis = 'vertical' | 'horizontal';
 
 /** Only items in the same group (e.g. siblings under one parent) are drop targets. */
 const sameGroupCollision: CollisionDetection = (args) => {
@@ -39,11 +44,16 @@ const sameGroupCollision: CollisionDetection = (args) => {
 interface SortableProviderProps {
   /** Called with the group and its ids in their new order. */
   onReorder: (group: string, ids: string[]) => void;
+  axis?: SortAxis;
   children: ReactNode;
 }
 
 /** One provider per screen; nest a `SortableGroup` for each independently ordered list. */
-export function SortableProvider({ onReorder, children }: SortableProviderProps) {
+export function SortableProvider({
+  onReorder,
+  axis = 'vertical',
+  children,
+}: SortableProviderProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -61,7 +71,7 @@ export function SortableProvider({ onReorder, children }: SortableProviderProps)
     <DndContext
       sensors={sensors}
       collisionDetection={sameGroupCollision}
-      modifiers={[verticalOnly]}
+      modifiers={[axis === 'vertical' ? verticalOnly : horizontalOnly]}
       onDragEnd={onDragEnd}
     >
       {children}
@@ -69,9 +79,18 @@ export function SortableProvider({ onReorder, children }: SortableProviderProps)
   );
 }
 
-export function SortableGroup({ ids, children }: { ids: string[]; children: ReactNode }) {
+interface SortableGroupProps {
+  ids: string[];
+  axis?: SortAxis;
+  children: ReactNode;
+}
+
+export function SortableGroup({ ids, axis = 'vertical', children }: SortableGroupProps) {
   return (
-    <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+    <SortableContext
+      items={ids}
+      strategy={axis === 'vertical' ? verticalListSortingStrategy : horizontalListSortingStrategy}
+    >
       {children}
     </SortableContext>
   );

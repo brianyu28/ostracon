@@ -120,7 +120,6 @@ function GeneralSettings({
       />
       <Select
         label="Primary field"
-        description="The field that names each record: it’s shown in links, cards and search."
         data={primaryOptions}
         value={collection.primaryFieldId}
         allowDeselect={false}

@@ -1,0 +1,46 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid var(--os-border);
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--os-text-dim);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--os-text);
+  }
+}
+
+.actions {
+  display: flex;
+  gap: $space-1;
+  margin-left: auto;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: $space-4 $space-5;
+  overflow-y: auto;
+
+  @include phone {
+    padding: $space-3;
+  }
+}

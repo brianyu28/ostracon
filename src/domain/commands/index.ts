@@ -19,7 +19,9 @@ import {
   createRecord,
   deleteRecords,
   duplicateRecords,
+  editRecords,
   setFieldValue,
+  setFromText,
   setRecordValues,
 } from './records';
 import { updateSettings } from './settings';
@@ -53,6 +55,8 @@ export const commands = {
   createRecord,
   setRecordValues,
   setFieldValue,
+  editRecords,
+  setFromText,
   duplicateRecords,
   deleteRecords,
   setLinks,
@@ -69,5 +73,5 @@ export type CommandResult<K extends CommandName> = ReturnType<Commands[K]['run']
 export { CommandError, type CommandContext } from './define';
 export type { CollectionChanges } from './collections';
 export type { FieldChanges, NewField, NewLinkField } from './fields';
-export type { NewRecord } from './records';
+export type { NewRecord, TextResult, TextRow } from './records';
 export type { ViewChanges } from './views';
