@@ -1,0 +1,49 @@
+@use '@/styles/tokens' as *;
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: var(--os-surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--os-accent);
+  }
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dropdown {
+  padding: $space-2;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 20px);
+  gap: $space-1;
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #fff;
+  border-radius: 50%;
+
+  &:focus-visible {
+    outline: 2px solid var(--os-accent);
+    outline-offset: 1px;
+  }
+}

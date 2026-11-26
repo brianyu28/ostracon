@@ -43,6 +43,7 @@ export interface NewField {
   /** Type-specific options; the type's defaults when omitted. */
   config?: unknown;
   description?: string;
+  required?: boolean;
   /** Place the field after this one (default: at the end). */
   afterFieldId?: Id;
   /** The view the field is added from: it is shown there (see `addFieldToViews`). */
@@ -67,6 +68,7 @@ export const createField = defineCommand<NewField, Id>({
         name,
         order: orderAfter(fieldsOf(draft, collectionId), input.afterFieldId),
         ...(input.description?.trim() ? { description: input.description.trim() } : {}),
+        ...(input.required ? { required: true as const } : {}),
         createdAt: ctx.now,
         updatedAt: ctx.now,
       },
@@ -185,20 +187,29 @@ function trimToSingleLinks(draft: DraftDoc, field: LinkField, ctx: CommandContex
   }
 }
 
+/** Applies name, description and required changes. */
+function applyBasicChanges(
+  draft: DraftDoc,
+  field: Draft<Field>,
+  changes: Omit<FieldChanges, 'config'>,
+): void {
+  if (changes.name !== undefined)
+    field.name = checkFieldName(draft, field.collectionId, changes.name, field.id);
+  applyChanges(field, {
+    ...(changes.description !== undefined || 'description' in changes
+      ? { description: changes.description?.trim() || undefined }
+      : {}),
+    ...(changes.required !== undefined || 'required' in changes
+      ? { required: changes.required ? (true as const) : undefined }
+      : {}),
+  });
+}
+
 export const updateField = defineCommand<{ id: Id; changes: FieldChanges }>({
   label: 'Edit field',
   run(draft, { id, changes }, ctx) {
     const field = required(draft.fields[id], 'Field');
-    if (changes.name !== undefined)
-      field.name = checkFieldName(draft, field.collectionId, changes.name, id);
-    applyChanges(field, {
-      ...(changes.description !== undefined || 'description' in changes
-        ? { description: changes.description?.trim() || undefined }
-        : {}),
-      ...(changes.required !== undefined || 'required' in changes
-        ? { required: changes.required ? (true as const) : undefined }
-        : {}),
-    });
+    applyBasicChanges(draft, field, changes);
     if (changes.config !== undefined) {
       if (field.type === 'link') {
         const multiple = (changes.config as { multiple?: unknown }).multiple;
@@ -226,11 +237,17 @@ export const updateField = defineCommand<{ id: Id; changes: FieldChanges }>({
  * to preview the change). A link field's paired field and links are removed.
  */
 export const changeFieldType = defineCommand<
-  { id: Id; type: FieldType; config?: unknown },
+  {
+    id: Id;
+    type: FieldType;
+    config?: unknown;
+    /** Name, description and required changes made together with the type change. */
+    changes?: Omit<FieldChanges, 'config'>;
+  },
   { converted: number; lost: number }
 >({
   label: 'Change field type',
-  run(draft, { id, type, config }, ctx) {
+  run(draft, { id, type, config, changes }, ctx) {
     const field = required(draft.fields[id], 'Field');
     const base: DocModel = original(draft);
     const before = base.fields[id] ?? field;
@@ -252,6 +269,7 @@ export const changeFieldType = defineCommand<
       }
     }
     draft.fields[id] = { ...plan.field, updatedAt: ctx.now };
+    if (changes) applyBasicChanges(draft, draft.fields[id], changes);
     for (const [recordId, value] of plan.values) {
       const record = getRecord(draft, before.collectionId, recordId);
       if (!record) continue;

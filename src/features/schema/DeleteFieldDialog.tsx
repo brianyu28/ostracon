@@ -1,0 +1,51 @@
+import { ConfirmDialog } from '@/components/ConfirmDialog/ConfirmDialog';
+import { iterateRecords } from '@/domain/model';
+import type { Id } from '@/domain/schema/types';
+import { pluralize } from '@/lib/format';
+import { toastWithUndo, tryRun } from '@/store/actions';
+import { useDocStore } from '@/store/docStore';
+
+interface DeleteFieldDialogProps {
+  fieldId: Id | null;
+  onClose: () => void;
+  onDeleted?: () => void;
+}
+
+/** Confirms deleting a field, saying what goes with it (values, or a link's paired field). */
+export function DeleteFieldDialog({ fieldId, onClose, onDeleted }: DeleteFieldDialogProps) {
+  const doc = useDocStore((s) => s.doc);
+  const field = fieldId ? doc?.fields[fieldId] : undefined;
+  if (!doc || !field) return null;
+  let consequence: string;
+  if (field.type === 'link') {
+    const inverse = doc.fields[field.config.inverseFieldId];
+    const other = inverse ? doc.collections[inverse.collectionId] : undefined;
+    consequence =
+      inverse && inverse.id !== field.id
+        ? `Its links are removed, and so is the paired field “${inverse.name}” in ${other?.name ?? 'the other collection'}.`
+        : 'Its links are removed.';
+  } else {
+    let count = 0;
+    for (const r of iterateRecords(doc, field.collectionId)) if (field.id in r.values) count++;
+    consequence = count
+      ? `Its values in ${pluralize(count, 'record')} are removed.`
+      : 'No records have a value in it.';
+  }
+  return (
+    <ConfirmDialog
+      opened
+      title={`Delete “${field.name}”?`}
+      confirmLabel="Delete field"
+      danger
+      onClose={onClose}
+      onConfirm={() => {
+        if (tryRun('deleteField', { id: field.id })) {
+          toastWithUndo(`Deleted field “${field.name}”`);
+          onDeleted?.();
+        }
+      }}
+    >
+      {consequence} You can undo this.
+    </ConfirmDialog>
+  );
+}

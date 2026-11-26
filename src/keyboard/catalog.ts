@@ -13,7 +13,7 @@ export interface CommandInfo {
   allowInInputs?: boolean;
 }
 
-export type CommandGroup = 'General' | 'Navigation' | 'File' | 'Edit';
+export type CommandGroup = 'General' | 'Navigation' | 'File' | 'Edit' | 'Collections';
 
 export const COMMAND_GROUPS: readonly CommandGroup[] = ['General', 'Navigation', 'File', 'Edit'];
 
@@ -52,6 +52,10 @@ export const COMMANDS = [
   // Edit
   { id: 'edit.undo', title: 'Undo', group: 'Edit', keys: ['mod+z'] },
   { id: 'edit.redo', title: 'Redo', group: 'Edit', keys: ['mod+shift+z', 'mod+y'] },
+  // Collections
+  { id: 'collection.new', title: 'New collection…', group: 'Collections', keys: [] },
+  { id: 'collection.addField', title: 'Add field…', group: 'Collections', keys: ['mod+shift+f'] },
+  { id: 'collection.settings', title: 'Collection settings…', group: 'Collections', keys: [] },
 ] as const satisfies readonly CommandInfo[];
 
 export type CommandId = (typeof COMMANDS)[number]['id'];

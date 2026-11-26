@@ -1,0 +1,55 @@
+@use '@/styles/tokens' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.config {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.configRow {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.configLabel {
+  flex: none;
+  width: 96px;
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+}
+
+.configControl {
+  flex: 1;
+  min-width: 0;
+}
+
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2 $space-3;
+}
+
+.preview {
+  @include tabular;
+
+  color: var(--os-text);
+}
+
+.notice {
+  font-size: $font-sm;
+}
+
+.examples {
+  color: var(--os-text-dim);
+}

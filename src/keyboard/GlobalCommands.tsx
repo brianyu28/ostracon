@@ -4,7 +4,7 @@ import { useDiscardGuard } from '@/app/file/useDiscardGuard';
 import { docStore } from '@/store/docStore';
 import { prefsStore } from '@/store/prefsStore';
 import { session, sessionStore } from '@/store/sessionStore';
-import { uiStore } from '@/store/uiStore';
+import { ui, uiStore } from '@/store/uiStore';
 import { useCommandHandlers } from './useCommandHandlers';
 import type { CommandId } from './catalog';
 import { installKeyboard, type Handler } from './registry';
@@ -84,6 +84,7 @@ export function GlobalCommands() {
       },
       enabled: () => sessionStore.getState().status === 'ready',
     },
+    'collection.new': { run: ui.openNewCollection, enabled: hasDoc },
     'edit.undo': {
       run: () => {
         docStore.getState().undo();

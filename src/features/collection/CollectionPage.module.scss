@@ -82,3 +82,19 @@
   margin: 0;
   color: var(--os-text-dim);
 }
+
+.columnHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  max-width: 100%;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  &:hover {
+    color: var(--os-text);
+  }
+}

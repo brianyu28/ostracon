@@ -1,5 +1,12 @@
-import { ActionIcon, Button, Group, Menu, Modal, Text } from '@mantine/core';
-import { IconDots, IconPlus, IconTrash } from '@tabler/icons-react';
+import { ActionIcon, Button, Menu, UnstyledButton } from '@mantine/core';
+import {
+  IconColumnInsertRight,
+  IconDots,
+  IconList,
+  IconPlus,
+  IconSettings,
+  IconTrash,
+} from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { Redirect, useParams } from 'wouter';
 import { InlineEdit } from '@/components/InlineEdit/InlineEdit';
@@ -11,7 +18,11 @@ import { recordTitle, valueText } from '@/domain/records';
 import type { Field, RecordEntity } from '@/domain/schema/types';
 import { useFormatContext } from '@/hooks/useFormatContext';
 import { pluralize } from '@/lib/format';
-import { toastWithUndo, tryDispatch } from '@/store/actions';
+import { FieldTypeIcon } from '@/components/FieldTypeIcon/FieldTypeIcon';
+import { DeleteCollectionDialog } from '@/features/schema/DeleteCollectionDialog';
+import { useCommandHandlers } from '@/keyboard/useCommandHandlers';
+import { tryDispatch } from '@/store/actions';
+import { ui } from '@/store/uiStore';
 import { useDocStore } from '@/store/docStore';
 import styles from './CollectionPage.module.scss';
 
@@ -78,19 +89,37 @@ export function CollectionPage() {
     [doc, collectionId],
   );
 
+  const addField = () => {
+    const last = columns.at(-1);
+    ui.openFieldEditor({
+      collectionId,
+      ...(view ? { viewId: view.id } : {}),
+      ...(last ? { afterFieldId: last.id } : {}),
+    });
+  };
+  useCommandHandlers({
+    'collection.addField': { run: addField, enabled: () => collection !== undefined },
+    'collection.settings': {
+      run: () => {
+        ui.openCollectionSettings(collectionId);
+      },
+      enabled: () => collection !== undefined,
+    },
+  });
+
   if (!doc) return null;
   if (!collection) return <Redirect to="/" replace />;
-
-  const deleteCollection = () => {
-    setConfirmingDelete(false);
-    if (tryDispatch('deleteCollection', { id: collection.id }) !== undefined)
-      toastWithUndo(`Deleted ${collection.name}`);
-  };
 
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <CollectionIcon icon={collection.icon} size={18} stroke={1.75} className={styles.icon} />
+        <CollectionIcon
+          icon={collection.icon}
+          color={collection.color}
+          size={18}
+          stroke={1.75}
+          className={styles.icon}
+        />
         <InlineEdit
           value={collection.name}
           label="Collection name"
@@ -101,6 +130,16 @@ export function CollectionPage() {
         />
         <span className={styles.count}>{pluralize(records.length, 'record')}</span>
         <div className={styles.actions}>
+          <Button
+            size="xs"
+            variant="default"
+            leftSection={<IconList size={14} />}
+            onClick={() => {
+              ui.openCollectionSettings(collection.id, 'fields');
+            }}
+          >
+            Fields
+          </Button>
           <Button
             size="xs"
             leftSection={<IconPlus size={14} />}
@@ -117,6 +156,18 @@ export function CollectionPage() {
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
+              <Menu.Item leftSection={<IconColumnInsertRight size={14} />} onClick={addField}>
+                Add field…
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconSettings size={14} />}
+                onClick={() => {
+                  ui.openCollectionSettings(collection.id);
+                }}
+              >
+                Collection settings…
+              </Menu.Item>
+              <Menu.Divider />
               <Menu.Item
                 color="red"
                 leftSection={<IconTrash size={14} />}
@@ -135,7 +186,18 @@ export function CollectionPage() {
           <thead>
             <tr>
               {columns.map((f) => (
-                <th key={f.id}>{f.name}</th>
+                <th key={f.id}>
+                  <UnstyledButton
+                    className={styles.columnHeader}
+                    title="Edit field"
+                    onClick={() => {
+                      ui.openFieldEditor({ collectionId: collection.id, fieldId: f.id });
+                    }}
+                  >
+                    <FieldTypeIcon type={f.type} />
+                    {f.name}
+                  </UnstyledButton>
+                </th>
               ))}
             </tr>
           </thead>
@@ -151,32 +213,14 @@ export function CollectionPage() {
         </table>
         {records.length === 0 && <p className={styles.empty}>No records yet.</p>}
       </div>
-      <Modal
-        opened={confirmingDelete}
-        onClose={() => {
-          setConfirmingDelete(false);
-        }}
-        title={`Delete ${collection.name}?`}
-        size="sm"
-      >
-        <Text size="sm">
-          This deletes the collection and its {pluralize(records.length, 'record')}. You can undo
-          it.
-        </Text>
-        <Group justify="flex-end" mt="md" gap="xs">
-          <Button
-            variant="default"
-            onClick={() => {
-              setConfirmingDelete(false);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button color="red" onClick={deleteCollection} data-autofocus>
-            Delete
-          </Button>
-        </Group>
-      </Modal>
+      {confirmingDelete && (
+        <DeleteCollectionDialog
+          collectionId={collection.id}
+          onClose={() => {
+            setConfirmingDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 }

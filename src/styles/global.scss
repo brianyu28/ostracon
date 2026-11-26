@@ -43,6 +43,38 @@
   --os-series-7: #6250d6;
   --os-series-8: #e34948;
   --os-series-other: #a3aab3;
+
+  // Named palette (select options, collections): chip background, chip text, solid swatch.
+  --os-gray-bg: #eceef1;
+  --os-gray-fg: #4a5560;
+  --os-gray: #9aa5b1;
+  --os-brown-bg: #f1e6dc;
+  --os-brown-fg: #6b4428;
+  --os-brown: #a0714f;
+  --os-red-bg: #fde4e2;
+  --os-red-fg: #9b2620;
+  --os-red: #d9483f;
+  --os-orange-bg: #fde9d9;
+  --os-orange-fg: #93460f;
+  --os-orange: #e07b39;
+  --os-yellow-bg: #fbf1c7;
+  --os-yellow-fg: #7a5a00;
+  --os-yellow: #d9a400;
+  --os-green-bg: #def3e3;
+  --os-green-fg: #1d6b3a;
+  --os-green: #3aa564;
+  --os-teal-bg: #d9f1ef;
+  --os-teal-fg: #116660;
+  --os-teal: #2a9d93;
+  --os-blue-bg: #e0ecfc;
+  --os-blue-fg: #1d4f91;
+  --os-blue: #3b7ddd;
+  --os-purple-bg: #ece4fb;
+  --os-purple-fg: #5532a0;
+  --os-purple: #8358d6;
+  --os-pink-bg: #fbe3ef;
+  --os-pink-fg: #95285c;
+  --os-pink: #d9578f;
 }
 
 :root[data-density='comfortable'] {
@@ -73,6 +105,27 @@
   --os-series-7: #9085e9;
   --os-series-8: #e66767;
   --os-series-other: #5c6570;
+
+  --os-gray-bg: #2b3038;
+  --os-gray-fg: #c5ccd4;
+  --os-brown-bg: #3a2c22;
+  --os-brown-fg: #e2c3a6;
+  --os-red-bg: #4a2321;
+  --os-red-fg: #ffb3ad;
+  --os-orange-bg: #4a2d1a;
+  --os-orange-fg: #ffc49a;
+  --os-yellow-bg: #443a12;
+  --os-yellow-fg: #f5d97a;
+  --os-green-bg: #1f3b29;
+  --os-green-fg: #9fe0b4;
+  --os-teal-bg: #183b38;
+  --os-teal-fg: #94e0d8;
+  --os-blue-bg: #1e3150;
+  --os-blue-fg: #a9c8f5;
+  --os-purple-bg: #31264d;
+  --os-purple-fg: #cdb8f7;
+  --os-pink-bg: #47233a;
+  --os-pink-fg: #f5b3d1;
 }
 
 html,

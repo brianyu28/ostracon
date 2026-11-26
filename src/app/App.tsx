@@ -11,6 +11,7 @@ import { ConflictDialog } from './file/ConflictDialog';
 import { UnencryptedCopyDialog } from './file/UnencryptedCopyDialog';
 import { UnlockDialog } from './file/UnlockDialog';
 import { DropboxDialog } from './file/DropboxDialog';
+import { SchemaDialogs } from '@/features/schema/SchemaDialogs';
 import { PrefsEffects } from './PrefsEffects';
 import { DocumentGate } from './file/DocumentGate';
 import { AppLayout } from './layout/AppLayout';
@@ -62,6 +63,7 @@ export function App({ children }: AppProps) {
       <UnlockDialog />
       <UnencryptedCopyDialog />
       <DropboxDialog />
+      <SchemaDialogs />
       <CommandPalette />
       <Toaster />
       <PrefsEffects />

@@ -1,0 +1,53 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  height: $row-height;
+  padding-right: 2px;
+  background: var(--os-bg);
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: var(--os-surface);
+  }
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+
+  input {
+    height: 22px;
+    min-height: 22px;
+    padding: 0 6px;
+    background: var(--chip-bg);
+    border-radius: 11px;
+  }
+}
+
+.used {
+  @include tabular;
+
+  font-size: $font-xs;
+  color: var(--os-text-faint);
+}
+
+.addRow {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  margin-top: $space-1;
+  padding-left: 42px;
+}
+
+.addInput {
+  flex: 1;
+}

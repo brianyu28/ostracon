@@ -1,0 +1,25 @@
+@use '@/styles/tokens' as *;
+
+.tabs {
+  margin-bottom: $space-3;
+}
+
+.panel {
+  min-height: 240px;
+}
+
+.general {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.name {
+  flex: 1;
+}

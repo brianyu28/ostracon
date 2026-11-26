@@ -1,0 +1,55 @@
+@use '@/styles/tokens' as *;
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $control-height;
+  height: $control-height;
+  color: var(--os-accent);
+  border: 1px solid var(--os-border);
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: var(--os-surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--os-accent);
+  }
+}
+
+.dropdown {
+  padding: $space-2;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 28px);
+  gap: 2px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--os-text-dim);
+  border-radius: $radius-sm;
+
+  &:hover {
+    color: var(--os-text);
+    background: var(--os-surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--os-accent);
+  }
+}
+
+.selected,
+.selected:hover {
+  color: var(--os-accent);
+  background: var(--os-surface-active);
+}

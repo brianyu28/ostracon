@@ -34,4 +34,18 @@ function installBrowserStubs() {
     disconnect(): void {}
   }
   window.ResizeObserver = ResizeObserverStub;
+
+  // Mantine's combobox scrolls the selected option into view.
+  Element.prototype.scrollIntoView = function scrollIntoView() {};
+
+  // Mantine's autosizing Textarea listens for web fonts loading.
+  if (!('fonts' in document)) {
+    Object.defineProperty(document, 'fonts', {
+      value: {
+        ready: Promise.resolve(),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      },
+    });
+  }
 }

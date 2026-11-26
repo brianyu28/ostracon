@@ -1,10 +1,9 @@
 import { ActionIcon } from '@mantine/core';
 import { IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
-import { collectionPath, routes, type AppRoute } from '@/app/routes';
-import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
-import { useDocStore } from '@/store/docStore';
+import { routes, type AppRoute } from '@/app/routes';
 import { usePrefs } from '@/store/prefsStore';
 import { NavItem } from './NavItem';
+import { SidebarCollections } from './SidebarCollections';
 import styles from './Sidebar.module.scss';
 
 const visible = routes.filter((r) => !r.hidden);
@@ -20,32 +19,6 @@ function RouteItem({ route }: { route: AppRoute }) {
       icon={(className) => <Icon className={className} stroke={1.75} aria-hidden />}
       variant="sidebar"
     />
-  );
-}
-
-/** The open document's collections, in their order. */
-function SidebarCollections() {
-  const collections = useDocStore((s) => s.doc?.collections);
-  if (!collections) return null;
-  const list = Object.values(collections).sort((a, b) => a.order - b.order);
-  if (list.length === 0) return null;
-  return (
-    <div className={styles.collections}>
-      <div className={styles.sectionLabel}>Collections</div>
-      <div className={styles.items}>
-        {list.map((c) => (
-          <NavItem
-            key={c.id}
-            href={collectionPath(c.id)}
-            title={c.name}
-            icon={(className) => (
-              <CollectionIcon icon={c.icon} className={className} stroke={1.75} aria-hidden />
-            )}
-            variant="sidebar"
-          />
-        ))}
-      </div>
-    </div>
   );
 }
 

@@ -59,7 +59,8 @@ src/
   workers/      io.worker.ts: parse, migrate, validate and serialize off the main thread
   keyboard/     Command catalog, key bindings, dispatcher, command palette
   components/   Shared UI components
-  features/     One folder per screen: home, collection, settings
+  features/     One folder per screen or area: home, collection, schema (collection and field
+                editing dialogs), settings
   lib/          Small pure utilities: dates, ids, formatting
   styles/       SCSS tokens and global color variables
 scripts/        gen-demo.ts (synthetic data files), gen-icons.ts
@@ -370,6 +371,12 @@ It also requires **Trusted Types**: code-loading sinks accept only values from t
   `useCommandHandlers`. Shortcuts, the ⌘K palette, the `?` overlay and Settings → Keyboard all
   read the catalog, and users can rebind any command. `g h` goes home, `g 1`…`g 9` to a
   collection by its sidebar position.
+- **App-wide dialogs**: the new-collection, collection-settings and field-editor dialogs
+  (`features/schema/`) are mounted once in `App` and opened through `ui` (`store/uiStore.ts`),
+  so any screen, menu or keyboard command can open them.
+- **Colors**: select options and collections use the named palette (`domain/fields/colors.ts`);
+  each color has `--os-<name>` (swatch), `--os-<name>-bg` and `--os-<name>-fg` (chips), checked
+  for 4.5:1 contrast in both themes.
 - **Settings**: declare options in `domain/settings/registry.ts` with `file` scope or `device`
   scope (`store/prefsStore.ts`). The Settings screen renders them automatically.
 - **Styling**: SCSS modules next to their component. Use `@use '@/styles/tokens' as *;` for

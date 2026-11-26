@@ -35,7 +35,8 @@
     }
 
     .name,
-    .sectionLabel {
+    .sectionHeader,
+    .itemMenu {
       display: none;
     }
 
@@ -102,8 +103,36 @@
   padding-top: $space-1;
 }
 
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-1 $space-2 0 $space-4;
+}
+
+.sectionAction {
+  color: var(--os-text-faint);
+}
+
+.collectionItem {
+  position: relative;
+
+  &:hover .itemMenu,
+  .itemMenu[data-expanded],
+  .itemMenu:focus-visible {
+    opacity: 1;
+  }
+}
+
+.itemMenu {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
 .sectionLabel {
-  padding: $space-1 $space-4 2px;
   font-size: $font-xs;
   font-weight: 600;
   color: var(--os-text-faint);

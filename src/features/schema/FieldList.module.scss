@@ -1,0 +1,65 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  height: $row-height + 4px;
+  padding-right: 2px;
+  background: var(--os-bg);
+  border-radius: $radius-sm;
+
+  &:hover {
+    background: var(--os-surface);
+  }
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: $space-2;
+  min-width: 0;
+  height: 100%;
+  padding: 0 $space-1;
+  border-radius: $radius-sm;
+
+  &:focus-visible {
+    outline: 2px solid var(--os-accent);
+    outline-offset: -2px;
+  }
+}
+
+.icon {
+  flex: none;
+  color: var(--os-text-dim);
+}
+
+.name {
+  overflow: hidden;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  flex: none;
+}
+
+.type {
+  flex: none;
+  margin-left: auto;
+  font-size: $font-sm;
+  color: var(--os-text-faint);
+}
+
+.footer {
+  margin-top: $space-2;
+  padding-left: 22px;
+}
