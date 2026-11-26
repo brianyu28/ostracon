@@ -10,12 +10,12 @@ import {
 } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { Redirect, useLocation, useParams } from 'wouter';
-import { recordPath } from '@/app/routes';
+import { collectionPath, recordPath } from '@/app/routes';
 import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
 import { InlineEdit } from '@/components/InlineEdit/InlineEdit';
 import { getRecord } from '@/domain/model';
-import type { Field, Id, RecordEntity, View } from '@/domain/schema/types';
-import { viewRecords } from '@/domain/views/rows';
+import type { Field, Id } from '@/domain/schema/types';
+import { collectionFields } from '@/domain/views/repair';
 import { DeleteCollectionDialog } from '@/features/schema/DeleteCollectionDialog';
 import { deleteRecords } from '@/features/record/recordActions';
 import { RecordPanel } from '@/features/record/RecordPanel';
@@ -25,27 +25,16 @@ import { runCommand } from '@/keyboard/registry';
 import { useCommandHandlers } from '@/keyboard/useCommandHandlers';
 import { pluralize } from '@/lib/format';
 import { tryDispatch } from '@/store/actions';
-import { docStore, useDocStore } from '@/store/docStore';
+import { useDocStore } from '@/store/docStore';
+import { useViewResult } from '@/features/views/useViewResult';
+import { ViewTabs } from '@/features/views/ViewTabs';
+import { ViewToolbar } from '@/features/views/ViewToolbar';
 import { ui } from '@/store/uiStore';
 import { BulkBar } from './BulkBar';
-import { FieldsMenu } from './FieldsMenu';
 import { RecordList } from './RecordList';
 import styles from './CollectionPage.module.scss';
 
 const PHONE_QUERY = '(max-width: 639.98px)';
-
-/**
- * The view's records in order. The arguments after `view` are the cache keys: the collection's
- * version (its records or links changed) and the fields (a sort field changed).
- */
-function orderedRecords(
-  view: View | undefined,
-  _version: number,
-  _fields: unknown,
-): RecordEntity[] {
-  const doc = docStore.getState().doc;
-  return doc && view ? viewRecords(doc, view) : [];
-}
 
 /** A collection and one of its views: the table with the record panel (a list on phones). */
 export function CollectionPage() {
@@ -59,23 +48,39 @@ export function CollectionPage() {
   const panelOpen = useTable((s) => s.panelOpen);
   const cursorRow = useTable((s) => s.cursor?.row);
 
-  const views = doc?.views;
-  const view = useMemo(() => {
-    if (!views) return undefined;
-    const list = Object.values(views)
-      .filter((v) => v.collectionId === collectionId)
-      .sort((a, b) => a.order - b.order);
-    return list.find((v) => v.id === viewId) ?? list[0];
-  }, [views, collectionId, viewId]);
-
-  // Re-sorted when this collection's records or links change (not on edits elsewhere).
-  const version = useDocStore((s) => s.index?.collectionVersion(collectionId) ?? 0);
-  const fields = doc?.fields;
-  const records = useMemo(() => orderedRecords(view, version, fields), [view, version, fields]);
-  const checkedIds = useMemo(
-    () => records.filter((r) => selected.has(r.id)).map((r) => r.id),
-    [records, selected],
+  const viewMap = doc?.views;
+  const views = useMemo(
+    () =>
+      Object.values(viewMap ?? {})
+        .filter((v) => v.collectionId === collectionId)
+        .sort((a, b) => a.order - b.order),
+    [viewMap, collectionId],
   );
+  const view = views.find((v) => v.id === viewId) ?? views[0];
+  const fieldMap = doc?.fields;
+  const fields = useMemo(
+    () => collectionFields(fieldMap ?? {}, collectionId),
+    [fieldMap, collectionId],
+  );
+
+  const result = useViewResult(view);
+  // The records the cursor moves through: all of them, or those in open groups.
+  const records = useMemo(() => {
+    if (!result.groups) return result.records;
+    const collapsed = new Set(view?.group?.collapsed ?? []);
+    return result.groups.filter((g) => !collapsed.has(g.key)).flatMap((g) => g.records);
+  }, [result, view?.group?.collapsed]);
+  const checkedIds = useMemo(
+    () => result.records.filter((r) => selected.has(r.id)).map((r) => r.id),
+    [result.records, selected],
+  );
+  const total = useDocStore((s) => s.index?.recordCount(collectionId) ?? 0);
+
+  const goToView = (step: number) => {
+    const i = views.findIndex((v) => v.id === view?.id);
+    const next = views[(i + step + views.length) % views.length];
+    if (next) navigate(collectionPath(collectionId, next.id));
+  };
 
   const addField = () => {
     const last = view?.fields.filter((f) => !f.hidden).at(-1);
@@ -90,6 +95,18 @@ export function CollectionPage() {
     if (id) navigate(recordPath(collectionId, id));
   };
   useCommandHandlers({
+    'view.prev': {
+      run: () => {
+        goToView(-1);
+      },
+      enabled: () => views.length > 1,
+    },
+    'view.next': {
+      run: () => {
+        goToView(1);
+      },
+      enabled: () => views.length > 1,
+    },
     'collection.addField': { run: addField, enabled: () => collection !== undefined },
     'collection.settings': {
       run: () => {
@@ -127,9 +144,12 @@ export function CollectionPage() {
             tryDispatch('updateCollection', { id: collection.id, changes: { name } });
           }}
         />
-        <span className={styles.count}>{pluralize(records.length, 'record')}</span>
+        <span className={styles.count}>
+          {result.records.length === total
+            ? pluralize(total, 'record')
+            : `${result.records.length.toLocaleString()} of ${pluralize(total, 'record')}`}
+        </span>
         <div className={styles.actions}>
-          {!phone && <FieldsMenu collection={collection} view={view} />}
           <Button
             size="xs"
             leftSection={<IconPlus size={14} />}
@@ -185,15 +205,23 @@ export function CollectionPage() {
           )}
         </div>
       </div>
+      {!phone && (
+        <div className={styles.viewBar}>
+          <ViewTabs collectionId={collection.id} views={views} activeId={view.id} />
+          <ViewToolbar collection={collection} view={view} fields={fields} />
+        </div>
+      )}
       {checkedIds.length > 0 && !phone && <BulkBar collectionId={collection.id} ids={checkedIds} />}
       <div className={styles.body}>
         {phone ? (
-          <RecordList collection={collection} records={records} fields={visibleFields} />
+          <RecordList collection={collection} records={result.records} fields={visibleFields} />
         ) : (
           <TableView
             collection={collection}
             view={view}
             records={records}
+            groups={result.groups}
+            context={result.context}
             onDeleteRecords={(ids: readonly Id[]) => {
               if (deleteRecords(collection.id, ids)) tableActions.setSelected([]);
             }}

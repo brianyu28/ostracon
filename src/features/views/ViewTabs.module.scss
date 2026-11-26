@@ -1,0 +1,46 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  flex: none;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 $space-2;
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+  white-space: nowrap;
+  border-radius: $radius-sm;
+
+  &:hover {
+    color: var(--os-text);
+    background: var(--os-surface-hover);
+  }
+}
+
+.active .button {
+  font-weight: 600;
+  color: var(--os-text);
+  background: var(--os-surface-hover);
+}
+
+.icon {
+  flex: none;
+  color: var(--os-text-faint);
+}
+
+.rename {
+  width: 140px;
+}

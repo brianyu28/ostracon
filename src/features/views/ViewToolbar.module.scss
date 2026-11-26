@@ -1,0 +1,147 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.count {
+  margin-left: 5px;
+  font-weight: 600;
+  color: var(--os-accent);
+}
+
+.search {
+  width: 180px;
+}
+
+.dropdown {
+  max-width: min(760px, calc(100vw - 24px));
+  padding: $space-2;
+}
+
+.emptyNote {
+  padding: $space-1 $space-1 $space-2;
+  font-size: $font-sm;
+  color: var(--os-text-faint);
+}
+
+.addButton {
+  align-self: flex-start;
+}
+
+// ── Filter builder ────────────────────────────────────────────────────────
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 480px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+}
+
+.connector {
+  flex: none;
+  width: 64px;
+  padding-left: $space-1;
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+}
+
+.connectorSelect {
+  flex: none;
+  width: 64px;
+}
+
+.nested {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: $space-1;
+  padding: $space-1;
+  background: var(--os-surface);
+  border: 1px solid var(--os-border);
+  border-radius: $radius-md;
+}
+
+.fieldSelect {
+  flex: none;
+  width: 150px;
+}
+
+.partSelect {
+  flex: none;
+  width: 120px;
+}
+
+.operatorSelect {
+  flex: none;
+  width: 140px;
+}
+
+.operand {
+  flex: 1;
+  min-width: 140px;
+}
+
+.pair {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+}
+
+.and {
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+}
+
+.number {
+  width: 100px;
+}
+
+.amount {
+  flex: none;
+  width: 64px;
+}
+
+.unit {
+  flex: none;
+  width: 100px;
+}
+
+.mode {
+  flex: none;
+  width: 128px;
+}
+
+.dateText {
+  width: 120px;
+}
+
+// ── Sorts and grouping ───────────────────────────────────────────────────
+
+.sorts {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+  min-width: 340px;
+}
+
+.groupEditor {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}

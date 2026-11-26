@@ -4,9 +4,16 @@ $row: var(--row-height, #{$row-height});
 
 .scroller {
   position: relative;
+  display: flex;
   flex: 1;
+  flex-direction: column;
   min-height: 0;
   overflow: auto;
+
+  > * {
+    flex: none;
+  }
+
   outline: none;
   @include tabular;
 }
@@ -293,4 +300,138 @@ $row: var(--row-height, #{$row-height});
   padding: $space-3;
   margin: 0;
   color: var(--os-text-dim);
+}
+
+// ── Groups ────────────────────────────────────────────────────────────────
+
+.groupRow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: stretch;
+  min-width: 100%;
+  background: var(--os-surface);
+  border-bottom: 1px solid var(--os-border);
+}
+
+.groupTitle {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 $space-2;
+  overflow: hidden;
+  font: inherit;
+  font-weight: 600;
+  color: var(--os-text);
+  text-align: left;
+  cursor: pointer;
+  background: var(--os-surface);
+  border: 0;
+  border-right: 1px solid var(--os-text-faint);
+}
+
+.groupLabel {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.groupEmpty {
+  font-weight: 500;
+  color: var(--os-text-dim);
+}
+
+.groupCount {
+  font-size: $font-xs;
+  font-weight: 500;
+  color: var(--os-text-faint);
+}
+
+.groupCell {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 $space-2;
+  overflow: hidden;
+  font-size: $font-sm;
+  color: var(--os-text-dim);
+  white-space: nowrap;
+}
+
+// ── Summaries ─────────────────────────────────────────────────────────────
+
+.summaryRow {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  min-width: 100%;
+  height: $row;
+  margin-top: auto;
+  background: var(--os-surface);
+  border-top: 1px solid var(--os-border);
+}
+
+.summaryGutter {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: none;
+  background: var(--os-surface);
+}
+
+.summaryCell {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+  padding: 0 $space-2;
+  overflow: hidden;
+  font-size: $font-sm;
+  white-space: nowrap;
+  background: var(--os-surface);
+
+  &.primary {
+    justify-content: flex-start;
+  }
+
+  &:hover {
+    background: var(--os-surface-hover);
+
+    .summaryHint {
+      visibility: visible;
+    }
+  }
+}
+
+.summaryLabel {
+  font-size: $font-xs;
+  color: var(--os-text-faint);
+}
+
+.summaryValue {
+  font-weight: 500;
+}
+
+.summaryHint {
+  font-size: $font-xs;
+  color: var(--os-text-faint);
+  visibility: hidden;
+}
+
+.menuCheck {
+  display: inline-block;
+  width: 14px;
 }

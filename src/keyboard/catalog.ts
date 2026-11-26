@@ -13,7 +13,8 @@ export interface CommandInfo {
   allowInInputs?: boolean;
 }
 
-export type CommandGroup = 'General' | 'Navigation' | 'File' | 'Edit' | 'Collections' | 'Records';
+export type CommandGroup =
+  'General' | 'Navigation' | 'File' | 'Edit' | 'Collections' | 'Views' | 'Records';
 
 export const COMMAND_GROUPS: readonly CommandGroup[] = [
   'General',
@@ -21,6 +22,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
   'File',
   'Edit',
   'Collections',
+  'Views',
   'Records',
 ];
 
@@ -63,6 +65,21 @@ export const COMMANDS = [
   { id: 'collection.new', title: 'New collection…', group: 'Collections', keys: [] },
   { id: 'collection.addField', title: 'Add field…', group: 'Collections', keys: ['mod+shift+f'] },
   { id: 'collection.settings', title: 'Collection settings…', group: 'Collections', keys: [] },
+  // Views
+  { id: 'view.prev', title: 'Previous view', group: 'Views', keys: ['['] },
+  { id: 'view.next', title: 'Next view', group: 'Views', keys: [']'] },
+  { id: 'view.filter', title: 'Filter…', group: 'Views', keys: ['f'] },
+  { id: 'view.sort', title: 'Sort…', group: 'Views', keys: ['s'] },
+  { id: 'view.group', title: 'Group…', group: 'Views', keys: ['shift+g'] },
+  { id: 'view.fields', title: 'Show or hide fields…', group: 'Views', keys: ['shift+f'] },
+  {
+    id: 'view.search',
+    title: 'Search this view',
+    group: 'Views',
+    keys: ['mod+f'],
+    allowInInputs: true,
+  },
+  { id: 'view.new', title: 'New view', group: 'Views', keys: [] },
   // Records (the table types into cells, so its record shortcuts avoid bare letters)
   { id: 'record.new', title: 'New record', group: 'Records', keys: ['n', 'mod+shift+enter'] },
   {

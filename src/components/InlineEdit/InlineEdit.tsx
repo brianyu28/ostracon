@@ -9,11 +9,22 @@ interface InlineEditProps {
   /** Accessible label for the input. */
   label: string;
   className?: string | undefined;
+  /** Start as an input (e.g. right after creating the thing being named). */
+  startEditing?: boolean;
+  /** Called when editing ends without a change. */
+  onCancel?: () => void;
 }
 
 /** Text that turns into an input on click (or Enter); Enter/blur commits, Escape cancels. */
-export function InlineEdit({ value, onCommit, label, className }: InlineEditProps) {
-  const [editing, setEditing] = useState(false);
+export function InlineEdit({
+  value,
+  onCommit,
+  label,
+  className,
+  startEditing = false,
+  onCancel,
+}: InlineEditProps) {
+  const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(value);
 
   if (!editing) {
@@ -35,6 +46,7 @@ export function InlineEdit({ value, onCommit, label, className }: InlineEditProp
   const commit = () => {
     setEditing(false);
     if (draft.trim() && draft.trim() !== value) onCommit(draft.trim());
+    else onCancel?.();
   };
 
   return (
@@ -46,10 +58,20 @@ export function InlineEdit({ value, onCommit, label, className }: InlineEditProp
       onChange={(e) => {
         setDraft(e.currentTarget.value);
       }}
+      onFocus={(e) => {
+        // After the click or double-click that opened it, so the selection sticks.
+        const input = e.currentTarget;
+        requestAnimationFrame(() => {
+          input.select();
+        });
+      }}
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === 'Enter') commit();
-        if (e.key === 'Escape') setEditing(false);
+        if (e.key === 'Escape') {
+          setEditing(false);
+          onCancel?.();
+        }
       }}
       classNames={{ root: styles.input }}
     />

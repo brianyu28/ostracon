@@ -9,7 +9,14 @@ import { ui } from '@/store/uiStore';
 import styles from './CollectionPage.module.scss';
 
 /** Shows and hides fields in the current view. */
-export function FieldsMenu({ collection, view }: { collection: Collection; view: View }) {
+interface FieldsMenuProps {
+  collection: Collection;
+  view: View;
+  opened: boolean;
+  onChange: (opened: boolean) => void;
+}
+
+export function FieldsMenu({ collection, view, opened, onChange }: FieldsMenuProps) {
   const fieldsMap = useDocStore((s) => s.doc?.fields);
   if (!fieldsMap) return null;
   const fields = collectionFields(fieldsMap, collection.id);
@@ -29,12 +36,16 @@ export function FieldsMenu({ collection, view }: { collection: Collection; view:
     });
   };
   return (
-    <Popover position="bottom-end" withinPortal shadow="md">
+    <Popover position="bottom-end" withinPortal shadow="md" opened={opened} onChange={onChange}>
       <Popover.Target>
         <Button
           size="xs"
-          variant="default"
+          variant={hidden.size ? 'light' : 'subtle'}
+          color="gray"
           leftSection={<IconList size={14} />}
+          onClick={() => {
+            onChange(!opened);
+          }}
           rightSection={
             hidden.size ? <span className={styles.badge}>{hidden.size} hidden</span> : undefined
           }

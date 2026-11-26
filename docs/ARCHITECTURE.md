@@ -60,8 +60,9 @@ src/
   keyboard/     Command catalog, key bindings, dispatcher, command palette
   components/   Shared UI components
   features/     One folder per screen or area: home, collection (page, bulk bar, phone list),
-                table (grid, cells, editors), record (panel and page), schema (collection
-                and field editing dialogs), settings
+                views (tabs, toolbar, filter/sort/group editors), table (grid, cells, editors,
+                group and summary rows), record (panel and page), schema (collection and
+                field editing dialogs), settings
   lib/          Small pure utilities: dates, ids, formatting, TSV, the Markdown subset
   styles/       SCSS tokens and global color variables
 scripts/        gen-demo.ts (synthetic data files), gen-icons.ts
@@ -272,9 +273,16 @@ usable field (or back to a table). Commands run it after every field change; `up
 rejects settings that repair would change. A view's field list always covers every field
 (missing ones are kept, hidden, at the end).
 
-`views/rows.ts` gives a view's records in order: by its sorts (empty values last), then creation
-order. The collection page memoizes it on the collection's index version, so edits elsewhere
-don't re-sort. Filters and grouping join it in Phase 4.
+**View evaluation** (`views/evaluate.ts`) runs filter → quick search → sort → group over one
+collection. `filter.ts` compiles the filter tree once into a predicate; conditions missing an
+operand are ignored (so a half-built filter hides nothing) and negative operators ("is not",
+"has none of", "is not within") match empty values. Dates compare as spans of days
+(`dates.ts`): a partial date covers its month or year, a range covers its days, and relative
+operands (rolling "past 3 weeks", calendar "last month", "year to date") resolve against
+today and the file's week start. `groups.ts` splits sorted records by one field (option order,
+date buckets, location part; empty group last) and `summaries.ts` computes footer and
+group-header summaries. The UI (`features/views/useViewResult.ts`) memoizes the result on the
+collection's index version, the view, the fields, the search text and today's date.
 
 ### The table
 
@@ -440,4 +448,5 @@ the index or anything that runs per record. Never commit real personal data; use
 and devices; ~60k links, 20 MB) and fails if a target is missed. Current results on a laptop:
 parse + validate + integrity ~380 ms, serialize ~120 ms, index build ~75 ms, one edit ~0.1 ms,
 setting one record's links ~1 ms, adding a field 0.2 ms, bulk-setting or retyping a field on
-22k records ~200 ms, pasting 1,000 rows ~10 ms, ordering a 22k-record view ~35 ms.
+22k records ~200 ms, pasting 1,000 rows ~10 ms, evaluating a filtered and sorted 22k-record view ~20 ms, searching
+it ~33 ms.

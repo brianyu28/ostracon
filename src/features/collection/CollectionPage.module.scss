@@ -38,6 +38,15 @@
   margin-left: auto;
 }
 
+.viewBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  padding: 3px $space-3;
+  border-bottom: 1px solid var(--os-border);
+}
+
 .badge {
   font-size: $font-xs;
   color: var(--os-text-faint);

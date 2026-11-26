@@ -28,6 +28,8 @@ interface TableState {
   selected: ReadonlySet<Id>;
   /** The record panel shows the cursor's record when open. */
   panelOpen: boolean;
+  /** Quick search text for the view. */
+  search: string;
 }
 
 const initial = {
@@ -36,6 +38,7 @@ const initial = {
   editing: null,
   selected: new Set<Id>(),
   panelOpen: false,
+  search: '',
 };
 
 export const tableStore = createStore<TableState>()(() => ({ viewId: null, ...initial }));

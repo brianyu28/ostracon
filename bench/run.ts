@@ -7,6 +7,7 @@ import { generateDemoDocument } from '../src/domain/demo/generate';
 import { countLinks, countRecords, iterateRecords, type DocModel } from '../src/domain/model';
 import { parseDocument } from '../src/domain/schema/document';
 import type { Field } from '../src/domain/schema/types';
+import { evaluateView } from '../src/domain/views/evaluate';
 import { viewRecords } from '../src/domain/views/rows';
 import { serializeModel } from '../src/persistence/codec/serialize';
 import { createDocStore } from '../src/store/docStore';
@@ -44,6 +45,7 @@ const byName = (collection: string, field: string): Field => {
 };
 const visits = byName('Restaurant visits', 'Visit');
 const notes = byName('Restaurant visits', 'Notes');
+const visitDate = byName('Restaurant visits', 'Date');
 const withField = byName('Restaurant visits', 'With');
 const visitIds = [...iterateRecords(doc, visits.collectionId)].map((r) => r.id);
 const people = byName('People', 'Name');
@@ -169,6 +171,61 @@ const cases: Case[] = [
           ...view,
           sorts: [{ fieldId: notes.id, dir: 'asc' }],
         });
+    },
+  },
+  {
+    name: 'Evaluate a 22k-record view (filter, sort by date)',
+    targetMs: 40,
+    runs: 5,
+    fn: () => {
+      const state = store.getState();
+      const view = Object.values(state.doc?.views ?? {}).find(
+        (v) => v.collectionId === visits.collectionId,
+      );
+      if (!view || !state.doc) return;
+      void evaluateView(
+        state.doc,
+        {
+          ...view,
+          filter: {
+            op: 'and',
+            items: [
+              {
+                fieldId: visitDate.id,
+                operator: 'within',
+                value: { kind: 'rolling', direction: 'past', amount: 2, unit: 'year' },
+              },
+              { fieldId: notes.id, operator: 'isNotEmpty' },
+            ],
+          },
+          sorts: [{ fieldId: visitDate.id, dir: 'desc' }],
+        },
+        {
+          today: '2026-11-26',
+          weekStartsOn: 1,
+          linked: (field, id) => state.index?.linked(field, id) ?? [],
+          format: { locale: 'en-US', defaultCurrency: 'USD', dateStyle: 'medium' },
+        },
+      );
+    },
+  },
+  {
+    name: 'Search a 22k-record view',
+    targetMs: 60,
+    runs: 5,
+    fn: () => {
+      const state = store.getState();
+      const view = Object.values(state.doc?.views ?? {}).find(
+        (v) => v.collectionId === visits.collectionId,
+      );
+      if (!view || !state.doc) return;
+      void evaluateView(state.doc, view, {
+        today: '2026-11-26',
+        weekStartsOn: 1,
+        linked: (field, id) => state.index?.linked(field, id) ?? [],
+        format: { locale: 'en-US', defaultCurrency: 'USD', dateStyle: 'medium' },
+        search: `pasted ${String(n++ % 900)}`,
+      });
     },
   },
   {

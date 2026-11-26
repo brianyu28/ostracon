@@ -8,6 +8,8 @@ import { getRecord, type DocModel } from '@/domain/model';
 import { DEFAULT_SETTINGS } from '@/domain/schema/defaults';
 import { recordTitle } from '@/domain/records';
 import type { Collection, Field, Id, RecordEntity, View } from '@/domain/schema/types';
+import type { ViewContext } from '@/domain/views/filter';
+import type { RecordGroup } from '@/domain/views/groups';
 import { useFormatContext } from '@/hooks/useFormatContext';
 import { useParseContext } from '@/hooks/useParseContext';
 import { parseTsv, toTsv } from '@/lib/tsv';
@@ -34,6 +36,8 @@ import {
   planPaste,
   selectionRect,
 } from './selection';
+import { GroupRow } from './GroupRow';
+import { SummaryRow } from './SummaryRow';
 import { TableHeader } from './TableHeader';
 import { TableRow, type RowHandlers } from './TableRow';
 import { tableActions, tableStore, useTable, type Editing } from './tableStore';
@@ -42,12 +46,21 @@ import styles from './TableView.module.scss';
 interface TableViewProps {
   collection: Collection;
   view: View;
+  /** Records the cursor moves through, in display order (collapsed groups left out). */
   records: readonly RecordEntity[];
+  /** Groups, when the view is grouped (their records include collapsed ones). */
+  groups?: readonly RecordGroup[] | undefined;
+  context: ViewContext;
   /** Records to act on: the checked rows, or the cursor's record. */
   onDeleteRecords: (ids: readonly Id[]) => void;
 }
 
 const ADD_COLUMN_WIDTH = 40;
+
+type DisplayRow =
+  | { kind: 'group'; group: RecordGroup; collapsed: boolean }
+  /** `index` is the record's position among the records the cursor moves through. */
+  | { kind: 'record'; record: RecordEntity; index: number };
 
 /**
  * Reads linked records' titles. `_version` is the index version: the index changes in place, so
@@ -69,7 +82,14 @@ function linkTitleReader(doc: DocModel | null, index: DocIndex | null, _version:
  * The table layout: a virtualized grid with a cell cursor, range selection, typing to edit,
  * TSV copy and paste, fill down, row selection, and column reorder, resize and hide.
  */
-export function TableView({ collection, view, records, onDeleteRecords }: TableViewProps) {
+export function TableView({
+  collection,
+  view,
+  records,
+  groups,
+  context,
+  onDeleteRecords,
+}: TableViewProps) {
   const doc = useDocStore((s) => s.doc);
   const index = useDocStore((s) => s.index);
   const indexVersion = useDocStore((s) => s.indexVersion);
@@ -105,7 +125,39 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
   useEffect(() => {
     rowIndexRef.current = rowIndex;
   }, [rowIndex]);
-  const editingRow = editing ? rowIndex.get(editing.row) : undefined;
+  const groupHeight = rowHeight + 6;
+
+  // What the grid shows: group headers and the records of open groups.
+  const display = useMemo(() => {
+    const rows: DisplayRow[] = [];
+    const ofRecord: number[] = [];
+    if (!groups) {
+      records.forEach((record, index) => {
+        ofRecord.push(rows.length);
+        rows.push({ kind: 'record', record, index });
+      });
+      return { rows, ofRecord };
+    }
+    const collapsed = new Set(view.group?.collapsed ?? []);
+    let index = 0;
+    for (const group of groups) {
+      const closed = collapsed.has(group.key);
+      rows.push({ kind: 'group', group, collapsed: closed });
+      if (closed) continue;
+      for (const record of group.records) {
+        ofRecord.push(rows.length);
+        rows.push({ kind: 'record', record, index: index++ });
+      }
+    }
+    return { rows, ofRecord };
+  }, [groups, records, view.group?.collapsed]);
+  const displayRef = useRef(display);
+  useEffect(() => {
+    displayRef.current = display;
+  }, [display]);
+  const editingRecordIndex = editing ? rowIndex.get(editing.row) : undefined;
+  const editingRow =
+    editingRecordIndex === undefined ? undefined : display.ofRecord[editingRecordIndex];
 
   const linkTitles = useMemo(
     () => linkTitleReader(doc, index, indexVersion),
@@ -114,10 +166,13 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual returns unstable functions by design.
   const virtualizer = useVirtualizer({
-    count: records.length,
+    count: display.rows.length,
     getScrollElement: () => scrollerRef.current,
-    estimateSize: () => rowHeight,
-    getItemKey: (i) => records[i]?.id ?? i,
+    estimateSize: (i) => (display.rows[i]?.kind === 'group' ? groupHeight : rowHeight),
+    getItemKey: (i) => {
+      const row = display.rows[i];
+      return row ? (row.kind === 'group' ? `group:${row.group.key}` : row.record.id) : i;
+    },
     overscan: 12,
     scrollMargin: rowHeight,
     // Keep the row being edited mounted while it's scrolled out of view.
@@ -136,7 +191,7 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
 
   useEffect(() => {
     virtualizer.measure();
-  }, [rowHeight, virtualizer]);
+  }, [rowHeight, virtualizer, display]);
 
   const focusGrid = useCallback(() => {
     scrollerRef.current?.focus({ preventScroll: true });
@@ -145,7 +200,7 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
   /** Scrolls a cell into view, leaving room for the frozen gutter and primary column. */
   const reveal = useCallback(
     (row: number, col: number) => {
-      virtualizer.scrollToIndex(row, { align: 'auto' });
+      virtualizer.scrollToIndex(displayRef.current.ofRecord[row] ?? row, { align: 'auto' });
       const scroller = scrollerRef.current;
       const column = columns[col];
       if (!scroller || !column || column.primary) return;
@@ -490,7 +545,8 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
       // The row is placed (by the view's sort) on the next render; scroll to it then.
       requestAnimationFrame(() => {
         const row = rowIndexRef.current.get(id);
-        if (row !== undefined) virtualizer.scrollToIndex(row, { align: 'auto' });
+        const shown = row === undefined ? undefined : displayRef.current.ofRecord[row];
+        if (shown !== undefined) virtualizer.scrollToIndex(shown, { align: 'auto' });
       });
     }
   };
@@ -628,15 +684,32 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
       />
       <div className={styles.body} style={{ height: virtualizer.getTotalSize(), width }}>
         {items.map((item) => {
-          const record = records[item.index];
-          if (!record) return null;
-          const inRange = rect !== null && item.index >= rect.top && item.index <= rect.bottom;
+          const row = display.rows[item.index];
+          if (!row) return null;
+          const top = `translateY(${String(item.start - virtualizer.options.scrollMargin)}px)`;
+          if (row.kind === 'group') {
+            return (
+              <GroupRow
+                key={item.key}
+                group={row.group}
+                collapsed={row.collapsed}
+                view={view}
+                columns={columns}
+                width={width}
+                context={context}
+                format={format}
+                style={{ transform: top, height: groupHeight }}
+              />
+            );
+          }
+          const { record, index: recordIndex } = row;
+          const inRange = rect !== null && recordIndex >= rect.top && recordIndex <= rect.bottom;
           const isCursorRow = cursor?.row === record.id;
           return (
             <TableRow
               key={item.key}
               record={record}
-              index={item.index}
+              index={recordIndex}
               columns={columns}
               width={width}
               cursorCol={
@@ -653,10 +726,7 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
               format={format}
               linkTitles={linkTitles}
               handlers={handlers}
-              style={{
-                transform: `translateY(${String(item.start - virtualizer.options.scrollMargin)}px)`,
-                height: rowHeight,
-              }}
+              style={{ transform: top, height: rowHeight }}
             />
           );
         })}
@@ -673,7 +743,15 @@ export function TableView({ collection, view, records, onDeleteRecords }: TableV
         </span>
         <span>New record</span>
       </button>
-      {records.length === 0 && <p className={styles.empty}>No records yet.</p>}
+      {display.rows.length === 0 && <p className={styles.empty}>No records yet.</p>}
+      <SummaryRow
+        view={view}
+        columns={columns}
+        width={width}
+        records={groups ? groups.flatMap((g) => g.records) : records}
+        context={context}
+        format={format}
+      />
       {deletingField && (
         <DeleteFieldDialog
           fieldId={deletingField}
