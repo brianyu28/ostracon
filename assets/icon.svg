@@ -1,28 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!--
     Ostracon app icon: the source of truth for every icon size and format.
-    A fired-clay shard (an ostrakon) with lines of writing scratched into it.
+    Three clay shards (ostraka) piled on a cream ground, darkest on top.
     Full-bleed square (no rounded corners): platforms that mask icons (iOS, Android) need it
-    this way. Run `pnpm gen:icons` after editing to regenerate public/ icons.
+    this way. The first <rect> is the background; everything after it is the mark, which the
+    maskable icons shrink into Android's safe zone. Keep `components/AppLogo` in step, then run
+    `pnpm gen:icons` to regenerate public/ icons.
   -->
-  <rect width="512" height="512" fill="#1f2933" />
-  <!-- The shard's broken edge (its thickness), offset below the face -->
-  <path
-    d="M150 132 L312 104 L404 176 L388 318 L300 410 L170 392 L108 286 L122 196 Z"
-    transform="translate(0 22)"
-    fill="#7a3519"
-  />
-  <!-- The face -->
-  <path
-    d="M150 132 L312 104 L404 176 L388 318 L300 410 L170 392 L108 286 L122 196 Z"
-    fill="#c4643a"
-  />
-  <!-- A lighter patch of worn glaze -->
-  <path d="M170 150 L300 128 L372 186 L232 200 Z" fill="#d97d50" opacity="0.7" />
-  <!-- Incised lines of writing -->
-  <g fill="none" stroke="#5e2812" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M170 236 L206 236 M226 236 L262 220 L262 252 M284 236 L340 236" />
-    <path d="M160 290 L230 290 M252 274 L252 306 M276 290 L350 290" />
-    <path d="M196 344 L292 344" />
-  </g>
+  <rect width="512" height="512" fill="#f3ebe0" />
+  <path d="M103 116 L415 105 L426 141 L408 192 L99 205 L90 151 Z" fill="#a94f2a" />
+  <path d="M111 217 L238 210 L257 224 L429 217 L416 298 L289 303 L270 291 L117 298 Z" fill="#c4643a" />
+  <path d="M100 312 L436 326 L419 404 L76 390 Z" fill="#dc8a62" />
 </svg>

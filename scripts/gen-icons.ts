@@ -7,7 +7,8 @@
  *   favicon.ico           32 + 48 px, for browsers that don't use the SVG
  *   apple-touch-icon.png  180 px full-bleed square (iOS rounds the corners itself)
  *   icon-192/512.png      "any" icons: macOS-style rounded square with margin (desktop installs)
- *   maskable-192/512.png  full-bleed squares Android crops to its own shape
+ *   maskable-192/512.png  full-bleed squares Android crops to its own shape, with the mark
+ *                         shrunk into the safe zone (the central circle, 80% of the side)
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import sharp from 'sharp';
@@ -36,6 +37,18 @@ function macStyle(): string {
     `<g transform="translate(${offset} ${offset}) scale(${scale})">` +
       rounded().replace(/^<svg[^>]*>|<\/svg>\s*$/g, '') +
       `</g>`,
+  );
+}
+
+/** The background left full-bleed, the mark scaled into the maskable safe zone. */
+function maskable(): string {
+  const background = /^\s*<rect[^>]*\/>/.exec(inner.replace(/<!--[\s\S]*?-->/g, ''));
+  if (!background) throw new Error('assets/icon.svg must start with its background <rect>');
+  const mark = inner.replace(/<!--[\s\S]*?-->/g, '').slice(background.index + background[0].length);
+  const scale = 0.8;
+  const offset = (SIZE * (1 - scale)) / 2;
+  return svg(
+    `${background[0]}<g transform="translate(${offset} ${offset}) scale(${scale})">${mark}</g>`,
   );
 }
 
@@ -80,8 +93,8 @@ const outputs: [string, Buffer | string][] = [
   ['apple-touch-icon.png', await png(source, 180)],
   ['icon-192.png', await png(macStyle(), 192)],
   ['icon-512.png', await png(macStyle(), 512)],
-  ['maskable-192.png', await png(source, 192)],
-  ['maskable-512.png', await png(source, 512)],
+  ['maskable-192.png', await png(maskable(), 192)],
+  ['maskable-512.png', await png(maskable(), 512)],
 ];
 for (const [name, data] of outputs) {
   writeFileSync(`public/${name}`, data);
