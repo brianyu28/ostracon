@@ -1,5 +1,6 @@
 /** View commands: create, configure, reorder, duplicate, delete. */
 import type { Draft } from 'immer';
+import { setRecordValues } from './records';
 import { BOARD_GROUP_TYPES, CALENDAR_DATE_TYPES } from '../fields/registry';
 import type { DocModel } from '../model';
 import type { Id, View, ViewField, ViewLayout } from '../schema/types';
@@ -152,5 +153,29 @@ export const deleteView = defineCommand<{ id: Id }>({
       throw new CommandError('A collection needs at least one view.');
     Reflect.deleteProperty(draft.views, id);
     tombstone(draft, id, now);
+  },
+});
+
+/**
+ * Moves a board card: sets the group field's value when it changes column, and (while the view
+ * isn't sorted) the board's card order. One undo step.
+ */
+export const moveCard = defineCommand<{
+  viewId: Id;
+  recordId: Id;
+  /** The group field's new value, when the card changes column. */
+  values?: Record<Id, unknown>;
+  /** The full card order after the move. */
+  cardOrder?: readonly Id[];
+}>({
+  label: 'Move card',
+  run(draft, { viewId, recordId, values, cardOrder }, ctx) {
+    const view = required(draft.views[viewId], 'View');
+    if (values && Object.keys(values).length)
+      setRecordValues.run(draft, { collectionId: view.collectionId, id: recordId, values }, ctx);
+    if (cardOrder && view.board && !view.sorts?.length) {
+      view.board.cardOrder = [...cardOrder];
+      view.updatedAt = ctx.now;
+    }
   },
 });

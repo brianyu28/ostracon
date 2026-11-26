@@ -117,6 +117,18 @@ export function HelpPage() {
               <b>Summaries</b>: click the footer under a column (sum, average, earliest…).
             </li>
             <li>
+              <b>Board</b>: a column per option (or checked, or rating). Drag cards to change the
+              value or order; <Kbd>⇧</Kbd>+arrows move the selected card.
+            </li>
+            <li>
+              <b>Calendar</b>: records on their dates; ranges span days. Drag to reschedule.{' '}
+              <Kbd>T</Kbd> today, <Kbd>[</Kbd> <Kbd>]</Kbd> months, <Kbd>N</Kbd> adds on the
+              selected day.
+            </li>
+            <li>
+              Add a view with <b>+</b> next to the tabs; a tab’s menu switches its layout.
+            </li>
+            <li>
               <b>Search</b> (<Kbd>⌘F</Kbd>) only filters what you see; it isn’t saved.
             </li>
           </ul>

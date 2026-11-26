@@ -211,6 +211,26 @@ export function planFromCollection(
           }
         : {}),
       hidden: v.fields.filter((f) => f.hidden).map((f) => keyOf(f.fieldId)),
+      ...(v.layout === 'board' && v.board
+        ? {
+            layout: 'board' as const,
+            board: {
+              field: v.board.groupFieldId,
+              ...(v.board.cardFields ? { cardFields: v.board.cardFields } : {}),
+            },
+          }
+        : {}),
+      ...(v.layout === 'calendar' && v.calendar
+        ? {
+            layout: 'calendar' as const,
+            calendar: {
+              field: v.calendar.dateFieldId,
+              ...(v.calendar.endFieldId ? { end: v.calendar.endFieldId } : {}),
+              ...(v.calendar.colorFieldId ? { color: v.calendar.colorFieldId } : {}),
+              ...(v.calendar.cardFields ? { cardFields: v.calendar.cardFields } : {}),
+            },
+          }
+        : {}),
       ...(v.summaries ? { summaries: { ...v.summaries } } : {}),
     }));
   return {

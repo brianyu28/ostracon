@@ -156,7 +156,11 @@ describe('planning', () => {
       Object.values(doc().views)
         .filter((v) => v.collectionId === copied.id)
         .map((v) => v.name),
-    ).toEqual(['All', 'Reading list', 'By status', 'Read this year']);
+    ).toEqual(['All', 'Reading list', 'By status', 'Read this year', 'Board']);
+    const board = Object.values(doc().views).find(
+      (v) => v.collectionId === copied.id && v.name === 'Board',
+    );
+    expect(board?.layout).toBe('board');
     expectIntact();
   });
 });

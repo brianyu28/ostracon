@@ -301,6 +301,17 @@ links, the document is the same. Errors are per record (`#ERR`). Views read form
 type (`fields/dynamic.ts` gives its operators and summaries). Commands reject a formula that
 doesn't check, including cycles. Sorting computes each record's sort values once.
 
+### Board and calendar
+
+`views/board.ts` splits a view's records into columns by a single select, checkbox or rating
+(the no-value column only when it has cards) and keeps a manual card order (`board.cardOrder`)
+while the view isn't sorted; `moveCard` sets the value and the order in one step.
+`views/calendar.ts` places records in a month: day-precision dates on their days (ranges and an
+optional end field on every day they cover), month- or year-only dates in a tray; dragging a
+card shifts the date (ranges and end dates move with it). Both use dnd-kit with mouse and
+long-press touch sensors; on phones the board scrolls a column at a time and the calendar
+shows counts with the selected day's records below.
+
 ### The table
 
 `features/table/` is the table layout: a virtualized grid (one scroll element for both axes, a

@@ -32,6 +32,8 @@ import { ViewToolbar } from '@/features/views/ViewToolbar';
 import { ui } from '@/store/uiStore';
 import { BulkBar } from './BulkBar';
 import { RecordList } from './RecordList';
+import { BoardView } from '@/features/board/BoardView';
+import { CalendarView } from '@/features/calendar/CalendarView';
 import styles from './CollectionPage.module.scss';
 
 const PHONE_QUERY = '(max-width: 639.98px)';
@@ -97,7 +99,24 @@ export function CollectionPage() {
     const id = tryDispatch('createRecord', { collectionId });
     if (id) navigate(recordPath(collectionId, id));
   };
+  /** Opens a record: its page on phones, the panel elsewhere. */
+  const openRecord = (id: Id) => {
+    if (phone) {
+      navigate(recordPath(collectionId, id));
+      return;
+    }
+    if (collection) tableActions.moveTo({ row: id, field: collection.primaryFieldId });
+    tableActions.togglePanel(true);
+  };
   useCommandHandlers({
+    // The table handles "new record" itself (it starts editing the new row).
+    'record.new': {
+      run: () => {
+        const id = tryDispatch('createRecord', { collectionId });
+        if (id) openRecord(id);
+      },
+      enabled: () => view !== undefined && view.layout !== 'table',
+    },
     'view.prev': {
       run: () => {
         goToView(-1);
@@ -234,7 +253,21 @@ export function CollectionPage() {
       </div>
       {checkedIds.length > 0 && !phone && <BulkBar collectionId={collection.id} ids={checkedIds} />}
       <div className={styles.body}>
-        {phone ? (
+        {view.layout === 'board' ? (
+          <BoardView
+            collection={collection}
+            view={view}
+            records={result.records}
+            onOpen={openRecord}
+          />
+        ) : view.layout === 'calendar' ? (
+          <CalendarView
+            collection={collection}
+            view={view}
+            records={result.records}
+            onOpen={openRecord}
+          />
+        ) : phone ? (
           <RecordList
             collection={collection}
             records={result.records}

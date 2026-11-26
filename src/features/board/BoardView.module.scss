@@ -1,0 +1,80 @@
+@use '@/styles/tokens' as *;
+
+.board {
+  display: flex;
+  flex: 1;
+  gap: $space-2;
+  min-height: 0;
+  padding: $space-2 $space-3;
+  overflow: auto;
+  outline: none;
+  background: var(--os-surface);
+
+  @include phone {
+    padding: $space-2;
+    scroll-snap-type: x mandatory;
+    scroll-padding: $space-2;
+  }
+}
+
+.column {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 272px;
+  max-height: 100%;
+  border-radius: $radius-md;
+
+  @include phone {
+    width: calc(100vw - 48px);
+    scroll-snap-align: start;
+  }
+}
+
+.over {
+  background: color-mix(in srgb, var(--os-accent) 6%, transparent);
+}
+
+.columnHeader {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  height: 30px;
+  padding: 0 $space-1;
+  font-size: $font-sm;
+  font-weight: 600;
+}
+
+.noValue {
+  color: var(--os-text-dim);
+}
+
+.count {
+  font-size: $font-xs;
+  font-weight: 500;
+  color: var(--os-text-faint);
+}
+
+.add {
+  margin-left: auto;
+}
+
+.cards {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 60px;
+  padding: 2px 2px $space-3;
+  overflow-y: auto;
+}
+
+.overlay {
+  cursor: grabbing;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.empty {
+  padding: $space-3;
+  color: var(--os-text-dim);
+}

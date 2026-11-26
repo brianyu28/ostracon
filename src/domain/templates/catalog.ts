@@ -156,6 +156,11 @@ export const TEMPLATES: readonly Template[] = [
             sorts: [{ field: 'date', dir: 'desc' }],
             summaries: { spent: 'sum' },
           },
+          {
+            name: 'Calendar',
+            layout: 'calendar',
+            calendar: { field: 'date', cardFields: ['restaurant'] },
+          },
         ],
       },
     },
@@ -193,6 +198,7 @@ export const TEMPLATES: readonly Template[] = [
           sorts: [{ field: 'dates', dir: 'desc' }],
         },
         { name: 'By type', group: { field: 'type', dir: 'asc' } },
+        { name: 'Calendar', layout: 'calendar', calendar: { field: 'dates', color: 'type' } },
       ],
     },
   },
@@ -243,6 +249,11 @@ export const TEMPLATES: readonly Template[] = [
           name: 'Read this year',
           filter: where('finished', 'within', THIS_YEAR),
           summaries: { pages: 'sum' },
+        },
+        {
+          name: 'Board',
+          layout: 'board',
+          board: { field: 'status', cardFields: ['author', 'rating'] },
         },
       ],
     },
@@ -361,6 +372,7 @@ export const TEMPLATES: readonly Template[] = [
       views: [
         { name: 'All', sorts: [{ field: 'started', dir: 'desc' }] },
         { name: 'By status', group: { field: 'status', dir: 'asc' } },
+        { name: 'Board', layout: 'board', board: { field: 'status', cardFields: ['network'] } },
       ],
     },
     log: {
@@ -510,6 +522,7 @@ export const TEMPLATES: readonly Template[] = [
       views: [
         { name: 'All', sorts: [{ field: 'dates', dir: 'desc' }] },
         { name: 'By year', group: { field: 'dates', dir: 'desc', dateBucket: 'year' } },
+        { name: 'Calendar', layout: 'calendar', calendar: { field: 'dates', color: 'purpose' } },
       ],
     },
   },
@@ -561,6 +574,7 @@ export const TEMPLATES: readonly Template[] = [
       views: [
         { name: 'All', sorts: [{ field: 'date', dir: 'desc' }] },
         { name: 'This year', filter: where('date', 'within', THIS_YEAR) },
+        { name: 'Calendar', layout: 'calendar', calendar: { field: 'date' } },
       ],
     },
   },
@@ -604,6 +618,11 @@ export const TEMPLATES: readonly Template[] = [
           name: 'Finished',
           filter: where('status', 'isAnyOf', ['Finished']),
           sorts: [{ field: 'completed', dir: 'desc' }],
+        },
+        {
+          name: 'Board',
+          layout: 'board',
+          board: { field: 'status', cardFields: ['platform', 'rating'] },
         },
       ],
     },
@@ -671,6 +690,11 @@ export const TEMPLATES: readonly Template[] = [
       views: [
         { name: 'All', sorts: [{ field: 'date', dir: 'desc' }] },
         { name: 'Ideas', filter: where('status', 'isAnyOf', ['Idea']) },
+        {
+          name: 'Board',
+          layout: 'board',
+          board: { field: 'status', cardFields: ['person', 'occasion'] },
+        },
       ],
     },
   },
@@ -733,6 +757,7 @@ export const TEMPLATES: readonly Template[] = [
           filter: where('date', 'within', THIS_YEAR),
           summaries: { distance: 'sum' },
         },
+        { name: 'Calendar', layout: 'calendar', calendar: { field: 'date' } },
       ],
     },
   },

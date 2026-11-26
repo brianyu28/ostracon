@@ -1,5 +1,12 @@
 import { ActionIcon, Button, CloseButton, Popover, TextInput } from '@mantine/core';
-import { IconArrowsSort, IconFilter, IconLayoutRows, IconSearch } from '@tabler/icons-react';
+import {
+  IconArrowsSort,
+  IconCalendar,
+  IconFilter,
+  IconLayoutKanban,
+  IconLayoutRows,
+  IconSearch,
+} from '@tabler/icons-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { fieldType } from '@/domain/fields/registry';
 import type { Collection, Field, View } from '@/domain/schema/types';
@@ -9,10 +16,11 @@ import { tableStore, useTable } from '@/features/table/tableStore';
 import { useCommandHandlers } from '@/keyboard/useCommandHandlers';
 import { FilterEditor } from './FilterEditor';
 import { GroupEditor } from './GroupEditor';
+import { LayoutOptions } from './LayoutOptions';
 import { SortEditor } from './SortEditor';
 import styles from './ViewToolbar.module.scss';
 
-type Panel = 'filter' | 'sort' | 'group' | 'fields';
+type Panel = 'filter' | 'sort' | 'group' | 'fields' | 'layout';
 
 interface ViewToolbarProps {
   collection: Collection;
@@ -116,33 +124,49 @@ export function ViewToolbar({ collection, view, fields, compact = false }: ViewT
       {panel(
         'filter',
         toolButton('filter', <IconFilter size={14} />, 'Filter', filterCount),
-        <FilterEditor view={view} fields={fields.filter((f) => f.type !== 'formula')} />,
+        <FilterEditor view={view} fields={fields} />,
       )}
       {panel(
         'sort',
         toolButton('sort', <IconArrowsSort size={14} />, 'Sort', sortCount),
         <SortEditor view={view} fields={fields.filter(SORTABLE)} />,
       )}
-      {panel(
-        'group',
-        toolButton(
-          'group',
-          <IconLayoutRows size={14} />,
-          'Group',
-          groupField ? groupField.name : 0,
-        ),
-        <GroupEditor view={view} fields={fields.filter(GROUPABLE)} />,
-        260,
+      {view.layout === 'table' ? (
+        <>
+          {panel(
+            'group',
+            toolButton(
+              'group',
+              <IconLayoutRows size={14} />,
+              'Group',
+              groupField ? groupField.name : 0,
+            ),
+            <GroupEditor view={view} fields={fields.filter(GROUPABLE)} />,
+            260,
+          )}
+          <FieldsMenu
+            collection={collection}
+            view={view}
+            compact={compact}
+            opened={open === 'fields'}
+            onChange={(o) => {
+              setOpen(o ? 'fields' : null);
+            }}
+          />
+        </>
+      ) : (
+        panel(
+          'layout',
+          toolButton(
+            'layout',
+            view.layout === 'board' ? <IconLayoutKanban size={14} /> : <IconCalendar size={14} />,
+            view.layout === 'board' ? 'Board' : 'Calendar',
+            0,
+          ),
+          <LayoutOptions collection={collection} view={view} fields={fields} />,
+          280,
+        )
       )}
-      <FieldsMenu
-        collection={collection}
-        view={view}
-        compact={compact}
-        opened={open === 'fields'}
-        onChange={(o) => {
-          setOpen(o ? 'fields' : null);
-        }}
-      />
       {searching || search ? (
         <TextInput
           ref={searchRef}

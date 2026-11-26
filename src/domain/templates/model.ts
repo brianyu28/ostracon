@@ -59,6 +59,10 @@ export interface TemplateView {
   /** Field keys hidden in this view. */
   hidden?: string[];
   summaries?: Record<string, Summary>;
+  /** A board or calendar instead of a table (fields by key). */
+  layout?: 'board' | 'calendar';
+  board?: { field: string; cardFields?: string[] };
+  calendar?: { field: string; end?: string; color?: string; cardFields?: string[] };
 }
 
 export interface TemplateCollection {

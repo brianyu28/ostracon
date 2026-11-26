@@ -1,5 +1,14 @@
 import { ActionIcon, Menu, UnstyledButton } from '@mantine/core';
-import { IconCopy, IconPencil, IconPlus, IconTable, IconTrash } from '@tabler/icons-react';
+import {
+  IconCalendar,
+  IconCopy,
+  IconLayoutKanban,
+  IconPencil,
+  IconPlus,
+  IconTable,
+  IconTrash,
+  type Icon,
+} from '@tabler/icons-react';
 import { clsx } from 'clsx';
 import { useState } from 'react';
 import { useLocation } from 'wouter';
@@ -7,7 +16,7 @@ import { collectionPath } from '@/app/routes';
 import { InlineEdit } from '@/components/InlineEdit/InlineEdit';
 import { SortableGroup, SortableProvider } from '@/components/Sortable/Sortable';
 import { useSortableItem } from '@/components/Sortable/useSortableItem';
-import type { Id, View } from '@/domain/schema/types';
+import type { Id, View, ViewLayout } from '@/domain/schema/types';
 import { toastWithUndo, tryDispatch, tryRun } from '@/store/actions';
 import styles from './ViewTabs.module.scss';
 
@@ -17,6 +26,12 @@ interface ViewTabsProps {
   activeId: Id;
 }
 
+const LAYOUTS: Readonly<Record<ViewLayout, { label: string; Icon: Icon }>> = {
+  table: { label: 'Table', Icon: IconTable },
+  board: { label: 'Board', Icon: IconLayoutKanban },
+  calendar: { label: 'Calendar', Icon: IconCalendar },
+};
+
 /** The collection's views as tabs: click to switch, double-click to rename, drag to reorder. */
 export function ViewTabs({ collectionId, views, activeId }: ViewTabsProps) {
   const [, navigate] = useLocation();
@@ -24,11 +39,11 @@ export function ViewTabs({ collectionId, views, activeId }: ViewTabsProps) {
   const open = (id: Id) => {
     navigate(collectionPath(collectionId, id));
   };
-  const add = () => {
+  const add = (layout: ViewLayout) => {
     const id = tryDispatch('createView', {
       collectionId,
-      name: uniqueName(views, 'Table'),
-      layout: 'table',
+      name: uniqueName(views, LAYOUTS[layout].label),
+      layout,
       ...(views.length ? { afterViewId: views[views.length - 1]?.id ?? '' } : {}),
     });
     if (id) {
@@ -77,9 +92,29 @@ export function ViewTabs({ collectionId, views, activeId }: ViewTabsProps) {
           ))}
         </SortableGroup>
       </SortableProvider>
-      <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Add view" onClick={add}>
-        <IconPlus size={14} />
-      </ActionIcon>
+      <Menu position="bottom-start" withinPortal>
+        <Menu.Target>
+          <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Add view">
+            <IconPlus size={14} />
+          </ActionIcon>
+        </Menu.Target>
+        <Menu.Dropdown>
+          {(Object.keys(LAYOUTS) as ViewLayout[]).map((layout) => {
+            const { label, Icon } = LAYOUTS[layout];
+            return (
+              <Menu.Item
+                key={layout}
+                leftSection={<Icon size={14} />}
+                onClick={() => {
+                  add(layout);
+                }}
+              >
+                {label}
+              </Menu.Item>
+            );
+          })}
+        </Menu.Dropdown>
+      </Menu>
     </div>
   );
 }
@@ -118,6 +153,7 @@ function ViewTab({
   const { setNodeRef, style, handle } = useSortableItem(view.id, 'views');
   const { setActivatorNodeRef, ...dragProps } = handle;
   const [menu, setMenu] = useState(false);
+  const LayoutIcon = LAYOUTS[view.layout].Icon;
   return (
     <div ref={setNodeRef} style={style} className={clsx(styles.tab, active && styles.active)}>
       {renaming ? (
@@ -134,7 +170,15 @@ function ViewTab({
           }}
         />
       ) : (
-        <Menu opened={menu} onChange={setMenu} position="bottom-start" withinPortal>
+        <Menu
+          opened={menu}
+          // The target's own click would toggle it: only our handlers open it.
+          onChange={(open) => {
+            if (!open) setMenu(false);
+          }}
+          position="bottom-start"
+          withinPortal
+        >
           <Menu.Target>
             <UnstyledButton
               ref={setActivatorNodeRef}
@@ -155,7 +199,7 @@ function ViewTab({
                 if (e.key === 'Enter') onOpen();
               }}
             >
-              <IconTable size={13} className={styles.icon} />
+              <LayoutIcon size={13} className={styles.icon} />
               {view.name}
             </UnstyledButton>
           </Menu.Target>
@@ -166,6 +210,24 @@ function ViewTab({
             <Menu.Item leftSection={<IconCopy size={14} />} onClick={onDuplicate}>
               Duplicate
             </Menu.Item>
+            <Menu.Divider />
+            {(Object.keys(LAYOUTS) as ViewLayout[])
+              .filter((layout) => layout !== view.layout)
+              .map((layout) => {
+                const { label, Icon } = LAYOUTS[layout];
+                return (
+                  <Menu.Item
+                    key={layout}
+                    leftSection={<Icon size={14} />}
+                    onClick={() => {
+                      tryRun('updateView', { id: view.id, changes: { layout } });
+                    }}
+                  >
+                    Show as {label.toLowerCase()}
+                  </Menu.Item>
+                );
+              })}
+            <Menu.Divider />
             {canDelete && (
               <Menu.Item color="red" leftSection={<IconTrash size={14} />} onClick={onDelete}>
                 Delete

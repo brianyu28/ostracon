@@ -69,7 +69,37 @@ function viewChanges(
     if (id) summaries[id] = summary;
   }
   if (Object.keys(summaries).length) changes.summaries = summaries;
+  const cards = (keys: string[] | undefined) =>
+    (keys ?? []).map((k) => ids.get(k)).filter((id): id is Id => id !== undefined);
+  const boardField = spec.board ? ids.get(spec.board.field) : undefined;
+  if (spec.layout === 'board' && spec.board && boardField) {
+    const cardFields = cards(spec.board.cardFields);
+    changes.board = { groupFieldId: boardField, ...(cardFields.length ? { cardFields } : {}) };
+  }
+  const dateField = spec.calendar ? ids.get(spec.calendar.field) : undefined;
+  if (spec.layout === 'calendar' && spec.calendar && dateField) {
+    const cardFields = cards(spec.calendar.cardFields);
+    const end = spec.calendar.end ? ids.get(spec.calendar.end) : undefined;
+    const color = spec.calendar.color ? ids.get(spec.calendar.color) : undefined;
+    changes.calendar = {
+      dateFieldId: dateField,
+      ...(end ? { endFieldId: end } : {}),
+      ...(color ? { colorFieldId: color } : {}),
+      ...(cardFields.length ? { cardFields } : {}),
+    };
+  }
   return changes;
+}
+
+/** A starter view's layout, falling back to a table when its field was removed in the preview. */
+function layoutOf(
+  spec: TemplateView,
+  ids: ReadonlyMap<string, Id>,
+): 'table' | 'board' | 'calendar' {
+  if (spec.layout === 'board' && spec.board && ids.has(spec.board.field)) return 'board';
+  if (spec.layout === 'calendar' && spec.calendar && ids.has(spec.calendar.field))
+    return 'calendar';
+  return 'table';
 }
 
 /**
@@ -222,7 +252,11 @@ function createViews(
     const viewId =
       i === 0 && defaultView
         ? defaultView.id
-        : createView.run(draft, { collectionId, name: spec.name, layout: 'table' }, ctx);
+        : createView.run(
+            draft,
+            { collectionId, name: spec.name, layout: layoutOf(spec, ids) },
+            ctx,
+          );
     const hidden = new Set((spec.hidden ?? []).map((k) => ids.get(k)).filter(Boolean));
     const fieldIds = Object.values(draft.fields)
       .filter((f) => f.collectionId === collectionId)
@@ -243,7 +277,7 @@ function createViews(
     const view = required(draft.views[viewId], 'View');
     const repaired = repairView({ ...view, ...changes }, draft.fields);
     const keep: Partial<View> = {};
-    for (const key of ['sorts', 'filter', 'group', 'summaries'] as const)
+    for (const key of ['sorts', 'filter', 'group', 'summaries', 'board', 'calendar'] as const)
       if (repaired[key] !== undefined && changes[key] !== undefined)
         Object.assign(keep, { [key]: repaired[key] });
     updateView.run(draft, { id: viewId, changes: { name: spec.name, ...keep } }, ctx);

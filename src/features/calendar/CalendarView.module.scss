@@ -1,0 +1,180 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1 $space-3;
+
+  @include phone {
+    padding: $space-1 $space-2;
+  }
+}
+
+.title {
+  flex: 1;
+  margin: 0 $space-2;
+  font-size: $font-lg;
+}
+
+.grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: 24px;
+  grid-auto-rows: minmax(96px, 1fr);
+  min-height: 480px;
+  margin: 0 $space-3 $space-3;
+  outline: none;
+  border-top: 1px solid var(--os-border);
+  border-left: 1px solid var(--os-border);
+
+  &:focus-visible .focused {
+    box-shadow: inset 0 0 0 2px var(--os-accent);
+  }
+
+  @include phone {
+    flex: none;
+    grid-auto-rows: 48px;
+    min-height: 0;
+    margin: 0 $space-2;
+  }
+}
+
+.weekday {
+  height: 24px;
+  font-size: $font-xs;
+  line-height: 24px;
+  color: var(--os-text-faint);
+  text-align: center;
+  border-right: 1px solid var(--os-border);
+  border-bottom: 1px solid var(--os-border);
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  min-height: 0;
+  padding: 2px;
+  overflow: hidden;
+  border-right: 1px solid var(--os-border);
+  border-bottom: 1px solid var(--os-border);
+
+  @include phone {
+    align-items: center;
+  }
+}
+
+.outside {
+  background: var(--os-surface);
+
+  .number {
+    color: var(--os-text-faint);
+  }
+}
+
+.focused {
+  background: color-mix(in srgb, var(--os-accent) 6%, var(--os-bg));
+}
+
+.over {
+  background: color-mix(in srgb, var(--os-accent) 14%, var(--os-bg));
+}
+
+.number {
+  align-self: flex-end;
+  min-width: 20px;
+  padding: 0 4px;
+  font-size: $font-xs;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 9px;
+  @include tabular;
+
+  @include phone {
+    align-self: center;
+  }
+}
+
+.today {
+  font-weight: 700;
+  color: #fff;
+  background: var(--os-accent);
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.entry {
+  touch-action: manipulation;
+}
+
+.lifting {
+  position: relative;
+  z-index: 10;
+  opacity: 0.8;
+}
+
+.dot {
+  min-width: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--os-accent);
+  text-align: center;
+  background: var(--os-surface-active);
+  border-radius: 8px;
+}
+
+.below {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  padding: 0 $space-3 $space-3;
+
+  @include phone {
+    padding: $space-2;
+  }
+
+  h4 {
+    margin: 0 0 $space-1;
+    font-size: $font-sm;
+  }
+
+  section > div {
+    margin-bottom: 4px;
+  }
+}
+
+.tray {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px;
+}
+
+.none {
+  margin: 0;
+  font-size: $font-sm;
+  color: var(--os-text-faint);
+}
+
+.empty {
+  padding: $space-3;
+  color: var(--os-text-dim);
+}

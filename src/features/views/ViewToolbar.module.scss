@@ -180,3 +180,23 @@
     flex-wrap: wrap;
   }
 }
+
+.optionsLabel {
+  margin-bottom: 4px;
+  font-size: $font-sm;
+  font-weight: 500;
+}
+
+.cardFields {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.cardField {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
