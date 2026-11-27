@@ -3,11 +3,23 @@ import { Modal } from '@/components/Modal/Modal';
 import { IconSearch } from '@tabler/icons-react';
 import { clsx } from 'clsx';
 import { useState, type KeyboardEvent } from 'react';
+import { navigate } from 'wouter/use-hash-location';
+import { collectionPath } from '@/app/routes';
 import { KeyBinding } from '@/components/KeyBinding/KeyBinding';
+import { useDocStore } from '@/store/docStore';
 import { uiStore, useUi } from '@/store/uiStore';
 import { COMMANDS, type CommandId } from './catalog';
 import { bindingsFor, isCommandAvailable, runCommand, useRegistryVersion } from './registry';
 import styles from './CommandPalette.module.scss';
+
+interface PaletteItem {
+  key: string;
+  group: string;
+  title: string;
+  /** Set for catalog commands, to show their key binding. */
+  commandId?: CommandId;
+  run: () => void;
+}
 
 function matches(title: string, query: string): boolean {
   const t = title.toLowerCase();
@@ -17,7 +29,7 @@ function matches(title: string, query: string): boolean {
     .every((word) => t.includes(word));
 }
 
-/** ⌘K: search and run any command that's available right now. */
+/** ⌘K: search and run any command that's available right now, or jump to a collection. */
 export function CommandPalette() {
   const opened = useUi((s) => s.paletteOpen);
   const close = () => {
@@ -44,14 +56,39 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   // Re-render when handlers attach or detach, since that changes what's available.
   useRegistryVersion();
-  const results = COMMANDS.filter(
-    (c) => c.id !== 'app.palette' && isCommandAvailable(c.id) && matches(c.title, query),
-  );
+  const collections = useDocStore((s) => s.doc?.collections);
 
-  const run = (id: CommandId) => {
+  const commandItems: PaletteItem[] = COMMANDS.filter(
+    (c) => c.id !== 'app.palette' && isCommandAvailable(c.id) && matches(c.title, query),
+  ).map((c) => ({
+    key: `cmd:${c.id}`,
+    group: c.group,
+    title: c.title,
+    commandId: c.id,
+    run: () => {
+      runCommand(c.id);
+    },
+  }));
+  const collectionItems: PaletteItem[] = Object.values(collections ?? {})
+    .filter((c) => matches(c.name, query))
+    .sort((a, b) => a.order - b.order)
+    .map((c) => ({
+      key: `col:${c.id}`,
+      group: 'Go to',
+      title: c.name,
+      run: () => {
+        navigate(collectionPath(c.id));
+      },
+    }));
+  // Typing a name should jump straight to the collection; otherwise commands lead.
+  const results = query.trim()
+    ? [...collectionItems, ...commandItems]
+    : [...commandItems, ...collectionItems];
+
+  const run = (item: PaletteItem) => {
     onClose();
     // Let the modal close (and focus return) before the command runs.
-    setTimeout(() => runCommand(id), 0);
+    setTimeout(item.run, 0);
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -63,8 +100,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       setActive((i) => Math.max(i - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const command = results[active];
-      if (command) run(command.id);
+      const item = results[active];
+      if (item) run(item);
     }
   };
 
@@ -74,7 +111,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         data-autofocus
         size="sm"
         variant="unstyled"
-        placeholder="Type a command…"
+        placeholder="Type a command or collection…"
         leftSection={<IconSearch size={16} />}
         value={query}
         onChange={(e) => {
@@ -86,12 +123,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         aria-label="Command"
       />
       <ul className={styles.list} role="listbox">
-        {results.length === 0 && <li className={styles.empty}>No matching commands</li>}
+        {results.length === 0 && <li className={styles.empty}>No matches</li>}
         {results.map((c, i) => {
-          const [binding] = bindingsFor(c.id);
+          const [binding] = c.commandId ? bindingsFor(c.commandId) : [];
           return (
             <li
-              key={c.id}
+              key={c.key}
               role="option"
               aria-selected={i === active}
               className={clsx(styles.item, i === active && styles.active)}
@@ -99,7 +136,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                 setActive(i);
               }}
               onClick={() => {
-                run(c.id);
+                run(c);
               }}
             >
               <span className={styles.group}>{c.group}</span>
