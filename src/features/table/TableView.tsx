@@ -607,6 +607,9 @@ export function TableView({
     remove: (column) => {
       setDeletingField(column.field.id);
     },
+    filter: (column) => {
+      tableStore.setState({ filterField: column.field.id });
+    },
     wrap: (column, on) => {
       tryRun('setViewFields', {
         id: view.id,

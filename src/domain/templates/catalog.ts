@@ -41,7 +41,7 @@ const PLACE = { parts: ['name', 'address', 'city', 'region', 'country'] };
 const STARS = { max: 5 };
 const CURRENCY = { style: 'currency', decimals: 2 };
 const PARTIAL = { partial: true };
-const notes = (): TemplateField => f('notes', 'Notes', 'richText');
+const notes = (): TemplateField => f('notes', 'Notes', 'text', { multiline: true });
 const title = (name = 'Name'): TemplateField => f('name', name, 'text');
 
 /** Every template, in gallery order. */
@@ -51,7 +51,7 @@ export const TEMPLATES: readonly Template[] = [
     name: 'People',
     description: 'Friends and family',
     keywords: 'friends family birthdays',
-    version: 1,
+    version: 2,
     collection: {
       name: 'People',
       icon: 'users',
@@ -90,7 +90,7 @@ export const TEMPLATES: readonly Template[] = [
     name: 'Restaurants',
     description: 'Where you ate',
     keywords: 'food dining eat cafes visits meals',
-    version: 1,
+    version: 2,
     collection: {
       name: 'Restaurants',
       icon: 'tools-kitchen-2',
@@ -127,7 +127,7 @@ export const TEMPLATES: readonly Template[] = [
     name: 'Activities',
     description: 'Things you did',
     keywords: 'events outings log diary',
-    version: 1,
+    version: 2,
     collection: {
       name: 'Activities',
       icon: 'run',
@@ -158,7 +158,7 @@ export const TEMPLATES: readonly Template[] = [
     name: 'Books',
     description: 'What you’ve read',
     keywords: 'reading library novels',
-    version: 1,
+    version: 2,
     collection: {
       name: 'Books',
       icon: 'books',
@@ -340,7 +340,7 @@ export const TEMPLATES: readonly Template[] = [
     name: 'Trips',
     description: 'Where you went',
     keywords: 'travel vacations holidays',
-    version: 1,
+    version: 2,
     collection: {
       name: 'Trips',
       icon: 'plane',
@@ -412,7 +412,7 @@ export const TEMPLATES: readonly Template[] = [
     name: 'Recipes',
     description: 'Dishes you’ve cooked',
     keywords: 'cooking food kitchen',
-    version: 1,
+    version: 2,
     collection: {
       name: 'Recipes',
       icon: 'chef-hat',

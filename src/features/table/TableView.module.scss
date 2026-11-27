@@ -191,6 +191,12 @@ $row: var(--row-height, #{$row-height});
   overflow: visible;
 }
 
+// Each row is its own stacking context (it's positioned with a transform), so the row being
+// edited is raised above the rows below for an editor that grows past it.
+.editingRow {
+  z-index: 1;
+}
+
 .missing {
   background-image: linear-gradient(
     color-mix(in srgb, var(--os-warning) 9%, transparent),

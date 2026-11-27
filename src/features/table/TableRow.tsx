@@ -66,7 +66,12 @@ export const TableRow = memo(function TableRow({
       role="row"
       aria-rowindex={index + 2}
       aria-selected={checked}
-      className={clsx(styles.row, checked && styles.checked, active && styles.activeRow)}
+      className={clsx(
+        styles.row,
+        checked && styles.checked,
+        active && styles.activeRow,
+        editing !== null && styles.editingRow,
+      )}
       style={{ ...style, width }}
     >
       <div className={styles.gutter}>

@@ -43,6 +43,17 @@ textarea.cellInput {
   min-width: 320px;
 }
 
+// Single-line text that wraps to show a long value; height is set to fit the content.
+textarea.growInput {
+  min-width: 240px;
+  min-height: calc(var(--os-row-height) + 1px);
+  max-height: 50vh;
+  padding: calc((var(--os-row-height) - 22px) / 2) $space-2;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  resize: none;
+}
+
 .invalid,
 .invalid:focus {
   border-color: var(--os-negative);

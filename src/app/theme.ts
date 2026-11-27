@@ -45,7 +45,9 @@ export const theme = createTheme({
     ActionIcon: { defaultProps: { size: 'sm', variant: 'subtle' } },
     TextInput: { defaultProps: { size: 'xs' } },
     NumberInput: { defaultProps: { size: 'xs' } },
-    Select: { defaultProps: { size: 'xs' } },
+    // Typing in a searchable select highlights the first match, so Enter picks it.
+    Select: { defaultProps: { size: 'xs', selectFirstOptionOnChange: true } },
+    MultiSelect: { defaultProps: { selectFirstOptionOnChange: true } },
     Checkbox: { defaultProps: { size: 'xs' } },
     Tooltip: { defaultProps: { openDelay: 400, fz: 'xs' } },
     Modal: { classNames: { inner: classes.modalInner, content: classes.modalContent } },

@@ -4,6 +4,7 @@ import {
   IconArrowUp,
   IconCheck,
   IconEyeOff,
+  IconFilter,
   IconPencil,
   IconTextWrap,
   IconTrash,
@@ -23,6 +24,8 @@ export interface HeaderActions {
   remove: (column: Column) => void;
   /** Turns text wrapping on or off for the column in this view. */
   wrap: (column: Column, on: boolean) => void;
+  /** Opens the view's filter with a new condition on the column's field. */
+  filter: (column: Column) => void;
   /** Live width while dragging the edge; `done` when released. */
   resize: (column: Column, width: number, done: boolean) => void;
 }
@@ -110,6 +113,14 @@ export function HeaderCell({ column, sort, actions }: HeaderCellProps) {
             }}
           >
             Sort descending
+          </Menu.Item>
+          <Menu.Item
+            leftSection={<IconFilter size={14} />}
+            onClick={() => {
+              actions.filter(column);
+            }}
+          >
+            Filter…
           </Menu.Item>
           <Menu.Divider />
           <Menu.Item

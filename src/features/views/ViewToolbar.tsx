@@ -7,7 +7,7 @@ import {
   IconLayoutRows,
   IconSearch,
 } from '@tabler/icons-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Collection, Field, View } from '@/domain/schema/types';
 import { countConditions } from '@/domain/views/filter';
 import { FieldsMenu } from '@/features/collection/FieldsMenu';
@@ -37,6 +37,20 @@ export function ViewToolbar({ collection, view, fields, compact = false }: ViewT
   const search = useTable((s) => s.search);
   const [searching, setSearching] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  // A column header asked to filter on its field: open the filter with a condition on it.
+  const [adding, setAdding] = useState<Field | null>(null);
+  useEffect(
+    () =>
+      tableStore.subscribe(({ filterField }) => {
+        if (filterField === null) return;
+        tableStore.setState({ filterField: null });
+        const field = fields.find((f) => f.id === filterField);
+        if (!field) return;
+        setAdding(field);
+        setOpen('filter');
+      }),
+    [fields],
+  );
   const toggle = (panel: Panel) => {
     setOpen((p) => (p === panel ? null : panel));
   };
@@ -77,6 +91,7 @@ export function ViewToolbar({ collection, view, fields, compact = false }: ViewT
       opened={open === id}
       onChange={(o) => {
         setOpen(o ? id : null);
+        if (!o) setAdding(null);
       }}
       position="bottom-end"
       shadow="md"
@@ -121,7 +136,7 @@ export function ViewToolbar({ collection, view, fields, compact = false }: ViewT
       {panel(
         'filter',
         toolButton('filter', <IconFilter size={14} />, 'Filter', filterCount),
-        <FilterEditor view={view} fields={fields} />,
+        <FilterEditor key={adding?.id} view={view} fields={fields} adding={adding} />,
       )}
       {panel(
         'sort',

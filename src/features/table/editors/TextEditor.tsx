@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { INVALID } from '@/domain/fields/model';
 import { fieldType } from '@/domain/fields/registry';
 import { editText } from './editText';
@@ -19,6 +19,15 @@ export function TextEditor(props: EditorProps) {
   const parsed = def.parse(text, field, parse);
   const invalid = parsed === INVALID;
   const multiline = field.type === 'text' && field.config.multiline === true;
+  // Single-line text in a cell wraps and grows so a long value is shown in full.
+  const growing = !multiline && field.type === 'text' && variant === 'cell';
+  const growRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = growRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${String(el.scrollHeight + 4)}px`; // + the 2px borders
+  }, [growing, text]);
   const change = invalid || text === original ? null : ({ kind: 'value', value: parsed } as const);
   const session = useEditorSession(change, onCommit, onCancel, props.saveOnClose);
 
@@ -40,6 +49,7 @@ export function TextEditor(props: EditorProps) {
     className: clsx(
       styles.input,
       variant === 'cell' && styles.cellInput,
+      growing && styles.growInput,
       invalid && styles.invalid,
     ),
     value: text,
@@ -56,6 +66,19 @@ export function TextEditor(props: EditorProps) {
       else el.setSelectionRange(el.value.length, el.value.length);
     },
   };
+  if (growing) {
+    return (
+      <textarea
+        {...common}
+        ref={growRef}
+        rows={1}
+        onChange={(e) => {
+          // No line breaks in single-line text (pasted ones become spaces).
+          setText(e.currentTarget.value.replace(/\r?\n/g, ' '));
+        }}
+      />
+    );
+  }
   return multiline ? (
     <textarea
       {...common}

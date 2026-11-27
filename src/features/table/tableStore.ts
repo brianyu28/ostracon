@@ -35,6 +35,8 @@ interface TableState {
    * groups) until the cursor leaves its row, so it stays in view while it's filled in.
    */
   pinned: Id | null;
+  /** A field to add a filter condition on (from its column header); the toolbar takes it. */
+  filterField: Id | null;
 }
 
 const initial = {
@@ -45,6 +47,7 @@ const initial = {
   panelOpen: false,
   search: '',
   pinned: null,
+  filterField: null,
 };
 
 /** The pin is kept while the cursor stays on the pinned row. */
