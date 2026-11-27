@@ -92,7 +92,7 @@ function needsOperand(value: unknown): boolean {
 }
 
 /** One condition as a predicate (or `always` when it can't be applied yet). */
-function compileCondition(
+export function compileCondition(
   c: FilterCondition,
   fields: Readonly<Record<Id, Field>>,
   ctx: ViewContext,

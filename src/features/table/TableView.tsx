@@ -8,6 +8,7 @@ import { DEFAULT_SETTINGS } from '@/domain/schema/defaults';
 import type { Collection, Field, Id, RecordEntity, View } from '@/domain/schema/types';
 import type { ViewContext } from '@/domain/views/filter';
 import type { RecordGroup } from '@/domain/views/groups';
+import { newRecordInput } from '@/features/views/newRecordInput';
 import { useFormatContext } from '@/hooks/useFormatContext';
 import { useParseContext } from '@/hooks/useParseContext';
 import { parseTsv, toTsv } from '@/lib/tsv';
@@ -537,7 +538,7 @@ export function TableView({
   };
 
   const newRecord = () => {
-    const id = tryDispatch('createRecord', { collectionId: collection.id });
+    const id = tryDispatch('createRecord', newRecordInput(collection.id, view, context));
     if (!id) return;
     const primary = columns[0]?.field.id;
     if (primary) {

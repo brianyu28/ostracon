@@ -6,6 +6,7 @@ import { MantineProvider } from '@mantine/core';
 import { Suspense, type ReactNode } from 'react';
 import { Route, Router, Switch, useLocation } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
+import { PageLoading } from '@/components/PageLoading/PageLoading';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { Toaster } from '@/components/Toaster/Toaster';
 import { ConflictDialog } from './file/ConflictDialog';
@@ -47,7 +48,7 @@ export function App({ children }: AppProps) {
             <Route key={path} path={match ?? path}>
               <AppLayout title={title}>
                 <ScreenBoundary>
-                  <Suspense fallback={null}>
+                  <Suspense fallback={<PageLoading />}>
                     {standalone ? (
                       <Page />
                     ) : (

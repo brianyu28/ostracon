@@ -12,6 +12,8 @@ import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Collection, Color, Field, Id, RecordEntity, View } from '@/domain/schema/types';
 import { calendarMonth, dayValue, shiftedValues } from '@/domain/views/calendar';
+import type { ViewContext } from '@/domain/views/filter';
+import { newRecordInput } from '@/features/views/newRecordInput';
 import { useFormatContext } from '@/hooks/useFormatContext';
 import {
   addDays,
@@ -33,6 +35,8 @@ interface CalendarViewProps {
   collection: Collection;
   view: View;
   records: readonly RecordEntity[];
+  /** For new records: the values the view's filter asks for. */
+  context: ViewContext;
   onOpen: (id: Id) => void;
 }
 
@@ -44,7 +48,7 @@ const EDITABLE = new Set(['date', 'dateTime', 'dateRange']);
  * cover). Drag a card to move its date. Arrows move between days, T jumps to today, [ and ]
  * change month, N adds a record on the focused day.
  */
-export function CalendarView({ collection, view, records, onOpen }: CalendarViewProps) {
+export function CalendarView({ collection, view, records, context, onOpen }: CalendarViewProps) {
   const fields = useDocStore((s) => s.doc?.fields);
   const weekStartsOn = useDocStore((s) => s.doc?.settings.weekStartsOn ?? 0);
   const format = useFormatContext();
@@ -92,10 +96,10 @@ export function CalendarView({ collection, view, records, onOpen }: CalendarView
   };
   const addOn = (day: string) => {
     if (!field || !editable) return;
-    const id = tryDispatch('createRecord', {
-      collectionId: collection.id,
-      values: { [field.id]: dayValue(field, day) },
-    });
+    const id = tryDispatch(
+      'createRecord',
+      newRecordInput(collection.id, view, context, { [field.id]: dayValue(field, day) }),
+    );
     if (id) {
       select(id);
       onOpen(id);

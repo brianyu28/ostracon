@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/core';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Collection, Field, Id, RecordEntity, View } from '@/domain/schema/types';
+import type { ViewContext } from '@/domain/views/filter';
 import {
   boardColumns,
   columnOf,
@@ -24,6 +25,7 @@ import { useDocStore } from '@/store/docStore';
 import { toast } from '@/store/toastStore';
 import { tableActions, tableStore, useTable } from '@/features/table/tableStore';
 import { useReaders } from '@/features/table/useReaders';
+import { newRecordInput } from '@/features/views/newRecordInput';
 import { BoardColumnView } from './BoardColumnView';
 import { RecordCard } from './RecordCard';
 import styles from './BoardView.module.scss';
@@ -33,6 +35,8 @@ interface BoardViewProps {
   view: View;
   /** The view's records (filtered, searched, sorted). */
   records: readonly RecordEntity[];
+  /** For new records: the values the view's filter asks for. */
+  context: ViewContext;
   /** Opens a record (the panel on wide screens, its page on phones). */
   onOpen: (id: Id) => void;
 }
@@ -42,7 +46,7 @@ interface BoardViewProps {
  * the value and within one to reorder (while the view isn't sorted). Arrows move between cards,
  * Shift+arrows move the card, Enter opens it.
  */
-export function BoardView({ collection, view, records, onOpen }: BoardViewProps) {
+export function BoardView({ collection, view, records, context, onOpen }: BoardViewProps) {
   const fields = useDocStore((s) => s.doc?.fields);
   const format = useFormatContext();
   const { links, formulas } = useReaders();
@@ -228,10 +232,12 @@ export function BoardView({ collection, view, records, onOpen }: BoardViewProps)
             onSelect={select}
             onOpen={onOpen}
             onAdd={() => {
-              const id = tryDispatch('createRecord', {
-                collectionId: collection.id,
-                values: { [field.id]: columnValue(field, column.key) },
-              });
+              const id = tryDispatch(
+                'createRecord',
+                newRecordInput(collection.id, view, context, {
+                  [field.id]: columnValue(field, column.key),
+                }),
+              );
               if (id) {
                 select(id);
                 onOpen(id);

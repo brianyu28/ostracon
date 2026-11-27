@@ -2,6 +2,7 @@
 import type { FieldType, Value } from '../../schema/types';
 import { BASIC_SUMMARIES, collator, INVALID, isRecordLike, type FieldTypeDef } from '../model';
 import { TEXT_OPERATORS } from '../operators';
+import { markdownText } from '@/lib/markdown';
 
 const MAX_TEXT = 100_000;
 
@@ -76,7 +77,9 @@ export const richTextType: FieldTypeDef<'richText'> = {
   ...stringType('richText', 'Rich text', (text) => text.trimEnd()),
   ...noConfig,
   canBePrimary: false,
-  format: (value) => value as string,
+  // Display text is the plain text of the Markdown; raw keeps the markup (copy, CSV, editing).
+  format: (value, _field, _ctx, style) =>
+    style === 'raw' ? (value as string) : markdownText(value as string),
 };
 
 /** Adds https:// to bare domains; accepts only http(s) URLs. */

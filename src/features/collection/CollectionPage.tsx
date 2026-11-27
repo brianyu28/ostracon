@@ -41,6 +41,7 @@ import {
   exportCollectionJson,
   exportViewCsv,
 } from '@/features/export/exporters';
+import { newRecordInput } from '@/features/views/newRecordInput';
 import { RecordList } from './RecordList';
 import { BoardView } from '@/features/board/BoardView';
 import { CalendarView } from '@/features/calendar/CalendarView';
@@ -128,7 +129,7 @@ export function CollectionPage() {
     });
   };
   const newRecordOnPhone = () => {
-    const id = tryDispatch('createRecord', { collectionId });
+    const id = tryDispatch('createRecord', newRecordInput(collectionId, view, result.context));
     if (id) navigate(recordPath(collectionId, id));
   };
   /** Opens a record: its page on phones, the panel elsewhere. */
@@ -144,7 +145,7 @@ export function CollectionPage() {
     // The table handles "new record" itself (it starts editing the new row).
     'record.new': {
       run: () => {
-        const id = tryDispatch('createRecord', { collectionId });
+        const id = tryDispatch('createRecord', newRecordInput(collectionId, view, result.context));
         if (id) openRecord(id);
       },
       enabled: () => view !== undefined && view.layout !== 'table',
@@ -343,6 +344,7 @@ export function CollectionPage() {
             collection={collection}
             view={view}
             records={result.records}
+            context={result.context}
             onOpen={openRecord}
           />
         ) : view.layout === 'calendar' ? (
@@ -350,6 +352,7 @@ export function CollectionPage() {
             collection={collection}
             view={view}
             records={result.records}
+            context={result.context}
             onOpen={openRecord}
           />
         ) : phone ? (

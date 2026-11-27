@@ -78,6 +78,15 @@ describe('text types', () => {
     expect(fieldType(single).isValid(' padded', single)).toBe(false);
   });
 
+  it('displays rich text as plain text and keeps the markup raw', () => {
+    const rich = make('richText');
+    const value = '**Great** dumplings, try the _chili_';
+    expect(fieldType(rich).format(value, rich, display, 'display')).toBe(
+      'Great dumplings, try the chili',
+    );
+    expect(fieldType(rich).format(value, rich, RAW_FORMAT, 'raw')).toBe(value);
+  });
+
   it('cleans URLs, emails and phone numbers', () => {
     const url = make('url', {});
     expect(fieldType(url).parse('example.com/x', url, parseCtx)).toBe('https://example.com/x');
