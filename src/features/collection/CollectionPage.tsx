@@ -11,7 +11,7 @@ import {
   IconSettings,
   IconTrash,
 } from '@tabler/icons-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Redirect, useLocation, useParams } from 'wouter';
 import { collectionPath, recordPath } from '@/app/routes';
 import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
@@ -46,6 +46,20 @@ import { CalendarView } from '@/features/calendar/CalendarView';
 import styles from './CollectionPage.module.scss';
 
 const PHONE_QUERY = '(max-width: 639.98px)';
+
+/** Whether a key event's target handles Escape itself (text entry, dialogs, menus, pickers). */
+function isEditableOrPopup(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  if (
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target instanceof HTMLInputElement &&
+      !['checkbox', 'radio', 'button', 'submit', 'reset'].includes(target.type))
+  )
+    return true;
+  return target.closest('[role="dialog"], [role="menu"], [role="listbox"]') !== null;
+}
 const SHORT_QUERY = '(max-height: 520px)';
 
 /** A collection and one of its views: the table with the record panel (a list on phones). */
@@ -147,11 +161,27 @@ export function CollectionPage() {
     },
   });
 
+  const panelRecord =
+    doc && panelOpen && cursorRow && !phone ? getRecord(doc, collectionId, cursorRow) : undefined;
+  const panelShown = panelRecord !== undefined;
+  // Escape closes the record panel unless something else (an editor, a menu, a dialog or
+  // the table's own selection) handles it first.
+  useEffect(() => {
+    if (!panelShown) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing) return;
+      if (isEditableOrPopup(e.target)) return;
+      e.preventDefault();
+      tableActions.togglePanel(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [panelShown]);
+
   if (!doc) return null;
   if (!collection || !view) return <Redirect to="/" replace />;
-
-  const panelRecord =
-    panelOpen && cursorRow && !phone ? getRecord(doc, collectionId, cursorRow) : undefined;
   const visibleFields = view.fields
     .filter((f) => !f.hidden)
     .map((f) => doc.fields[f.fieldId])

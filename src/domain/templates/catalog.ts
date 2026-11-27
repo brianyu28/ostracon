@@ -88,7 +88,7 @@ export const TEMPLATES: readonly Template[] = [
   {
     key: 'restaurants',
     name: 'Restaurants',
-    description: 'Where you ate, when and with whom',
+    description: 'Where you ate',
     keywords: 'food dining eat cafes visits meals',
     version: 1,
     collection: {
@@ -156,7 +156,7 @@ export const TEMPLATES: readonly Template[] = [
   {
     key: 'books',
     name: 'Books',
-    description: 'What you’re reading, have read and want to read',
+    description: 'What you’ve read',
     keywords: 'reading library novels',
     version: 1,
     collection: {
@@ -364,7 +364,7 @@ export const TEMPLATES: readonly Template[] = [
   {
     key: 'gifts',
     name: 'Gifts',
-    description: 'Gifts given and received, and ideas',
+    description: 'Gifts given and received',
     keywords: 'presents birthdays holidays ideas',
     version: 1,
     collection: {
@@ -410,7 +410,7 @@ export const TEMPLATES: readonly Template[] = [
   {
     key: 'recipes',
     name: 'Recipes',
-    description: 'Dishes you’ve cooked and how they went',
+    description: 'Dishes you’ve cooked',
     keywords: 'cooking food kitchen',
     version: 1,
     collection: {

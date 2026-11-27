@@ -16,6 +16,10 @@ export interface DevicePrefs {
   density: DensityPref;
   dateFormat: DateFormatPref;
   sidebarCollapsed: boolean;
+  /** Home screen sections. */
+  homeOnThisDay: boolean;
+  homeRecent: boolean;
+  homeRecentCount: number;
   /** User overrides of keyboard shortcuts: command id → key sequences. */
   keybindings: Record<string, string[]>;
 }
@@ -25,6 +29,9 @@ export const DEFAULT_PREFS: DevicePrefs = {
   density: 'compact',
   dateFormat: 'medium',
   sidebarCollapsed: false,
+  homeOnThisDay: true,
+  homeRecent: true,
+  homeRecentCount: 20,
   keybindings: {},
 };
 
@@ -59,11 +66,23 @@ export const prefsStore = createStore<DevicePrefs & PrefsActions>()(
       name: PREFS_STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
       version: 1,
-      partialize: ({ theme, density, dateFormat, sidebarCollapsed, keybindings }) => ({
+      partialize: ({
         theme,
         density,
         dateFormat,
         sidebarCollapsed,
+        homeOnThisDay,
+        homeRecent,
+        homeRecentCount,
+        keybindings,
+      }) => ({
+        theme,
+        density,
+        dateFormat,
+        sidebarCollapsed,
+        homeOnThisDay,
+        homeRecent,
+        homeRecentCount,
         keybindings,
       }),
     },

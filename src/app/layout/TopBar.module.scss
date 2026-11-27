@@ -42,6 +42,13 @@
   font-weight: 600;
 }
 
+.shortOnly {
+  // Matches the collection page's SHORT_QUERY.
+  @media (min-height: 520.02px) {
+    display: none;
+  }
+}
+
 .right {
   display: flex;
   align-items: center;

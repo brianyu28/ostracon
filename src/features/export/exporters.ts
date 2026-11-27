@@ -1,7 +1,7 @@
 /**
  * Exports: the current view as CSV (visible fields, filtered and sorted), a collection's records
  * as readable JSON (field names as keys), a collection as an Ostracon file (re-importable), or
- * the whole document as plain JSON. Exports are never encrypted; when the file is, a toast says
+ * a copy of the whole document. Exports are never encrypted; when the file is, a toast says
  * so.
  */
 import { FORMULA_ERROR, formulaValue } from '@/domain/computed';
@@ -143,12 +143,13 @@ export function exportCollectionFile(collection: Collection, include: readonly I
   warnIfEncrypted();
 }
 
-/** The whole document as a plain (unencrypted) Ostracon file. */
+/** A copy of the whole document as an Ostracon file (never encrypted). */
 export function exportDocumentJson(): void {
   const doc = docStore.getState().doc;
   if (!doc) return;
   const name =
     sessionStore.getState().source?.name.replace(/\.ostracon\.json$|\.json$/, '') ?? 'Ostracon';
-  download(`${name} (plain).ostracon.json`, serializeModel(doc), 'application/json');
+  const suffix = sessionStore.getState().encryption ? 'unencrypted copy' : 'copy';
+  download(`${name} (${suffix}).ostracon.json`, serializeModel(doc), 'application/json');
   warnIfEncrypted();
 }

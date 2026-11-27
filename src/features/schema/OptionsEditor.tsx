@@ -1,10 +1,16 @@
-import { ActionIcon, TextInput } from '@mantine/core';
-import { IconPlus, IconX } from '@tabler/icons-react';
+import { ActionIcon, Button, TextInput } from '@mantine/core';
+import {
+  IconPlus,
+  IconSortAscendingLetters,
+  IconSortDescendingNumbers,
+  IconX,
+} from '@tabler/icons-react';
 import { useState } from 'react';
 import { ColorPicker } from '@/components/ColorPicker/ColorPicker';
 import { DragHandle, SortableGroup, SortableProvider } from '@/components/Sortable/Sortable';
 import { useSortableItem } from '@/components/Sortable/useSortableItem';
 import { COLORS } from '@/domain/fields/colors';
+import { collator } from '@/domain/fields/model';
 import type { Color, SelectOption } from '@/domain/schema/types';
 import { newId } from '@/lib/id';
 import styles from './OptionsEditor.module.scss';
@@ -29,6 +35,14 @@ export function OptionsEditor({ options, onChange, usage }: OptionsEditorProps) 
     const color = COLORS[(options.length + 1) % COLORS.length] ?? 'gray';
     onChange([...options, { id: newId('option'), name, color }]);
     setNewName('');
+  };
+  const sortByName = () => {
+    onChange([...options].sort((a, b) => collator.compare(a.name, b.name)));
+  };
+  const sortByCount = () => {
+    const count = (o: OptionDraft) => usage?.get(o.id) ?? 0;
+    // Stable: options used equally often keep their current order.
+    onChange([...options].sort((a, b) => count(b) - count(a)));
   };
   const update = (id: string, patch: Partial<OptionDraft>) => {
     onChange(options.map((o) => (o.id === id ? { ...o, ...patch } : o)));
@@ -62,6 +76,30 @@ export function OptionsEditor({ options, onChange, usage }: OptionsEditorProps) 
           ))}
         </SortableGroup>
       </SortableProvider>
+      {options.length > 1 && (
+        <div className={styles.sortRow}>
+          <Button
+            size="compact-xs"
+            variant="subtle"
+            color="gray"
+            leftSection={<IconSortAscendingLetters size={13} />}
+            onClick={sortByName}
+          >
+            Sort A–Z
+          </Button>
+          {usage && (
+            <Button
+              size="compact-xs"
+              variant="subtle"
+              color="gray"
+              leftSection={<IconSortDescendingNumbers size={13} />}
+              onClick={sortByCount}
+            >
+              Sort by count
+            </Button>
+          )}
+        </div>
+      )}
       <div className={styles.addRow}>
         <TextInput
           size="xs"

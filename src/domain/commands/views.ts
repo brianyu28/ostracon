@@ -77,7 +77,10 @@ export const duplicateView = defineCommand<{ id: Id }, Id>({
 
 /** View settings; `undefined` removes a setting. */
 export type ViewChanges = Partial<
-  Pick<View, 'name' | 'layout' | 'filter' | 'sorts' | 'group' | 'summaries' | 'board' | 'calendar'>
+  Pick<
+    View,
+    'name' | 'layout' | 'filter' | 'sorts' | 'group' | 'summaries' | 'board' | 'calendar' | 'wrap'
+  >
 >;
 
 export const updateView = defineCommand<{ id: Id; changes: ViewChanges }>({

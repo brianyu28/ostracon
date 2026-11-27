@@ -129,7 +129,7 @@ export function FileMenu() {
               });
             }}
           >
-            Export as plain JSON
+            {encrypted ? 'Export unencrypted copy' : 'Export a copy'}
           </Menu.Item>
           <Menu.Divider />
           <Menu.Item

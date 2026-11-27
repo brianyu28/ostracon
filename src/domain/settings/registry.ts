@@ -19,10 +19,11 @@ interface BaseSetting {
   control: SettingControl;
 }
 
-export type SettingSection = 'appearance' | 'regional';
+export type SettingSection = 'appearance' | 'home' | 'regional';
 
 export const SETTING_SECTIONS: readonly { id: SettingSection; title: string }[] = [
   { id: 'appearance', title: 'Appearance' },
+  { id: 'home', title: 'Home screen' },
   { id: 'regional', title: 'Regional' },
 ];
 
@@ -78,6 +79,28 @@ export const SETTINGS: readonly SettingDef[] = [
         { value: 'iso', label: '2026-11-24' },
       ],
     },
+  },
+  {
+    scope: 'device',
+    key: 'homeOnThisDay',
+    section: 'home',
+    label: 'On this day',
+    description: 'Records from this date in earlier years',
+    control: { kind: 'boolean' },
+  },
+  {
+    scope: 'device',
+    key: 'homeRecent',
+    section: 'home',
+    label: 'Recently edited',
+    control: { kind: 'boolean' },
+  },
+  {
+    scope: 'device',
+    key: 'homeRecentCount',
+    section: 'home',
+    label: 'Recently edited records shown',
+    control: { kind: 'number', min: 1, max: 100 },
   },
   // ── File ──
   {

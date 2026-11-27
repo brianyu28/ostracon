@@ -9,6 +9,8 @@
  * Migrations operate on plain JSON (never on current types), so they keep working
  * as the codebase evolves.
  */
+import { v1ToV2 } from './v1-to-v2';
+
 export type JsonObject = Record<string, unknown>;
 
 export interface Migration {
@@ -19,7 +21,7 @@ export interface Migration {
 }
 
 /** Ordered list of all migrations. */
-export const migrations: readonly Migration[] = [];
+export const migrations: readonly Migration[] = [v1ToV2];
 
 export class MigrationError extends Error {
   readonly fromVersion: number;

@@ -1,4 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { clsx } from 'clsx';
 import { IconPlus } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
@@ -166,9 +167,13 @@ export function TableView({
     },
   });
 
+  const wrap = view.wrap === true;
+  // Sizes are cached by row key, and the virtualizer measures wrapped rows as they mount or
+  // resize. Only a new row height or wrap setting invalidates them. Resetting on data changes
+  // would drop measured heights of rows whose size didn't change, and nothing measures those again.
   useEffect(() => {
     virtualizer.measure();
-  }, [rowHeight, virtualizer, display]);
+  }, [rowHeight, virtualizer, wrap]);
 
   const focusGrid = useCallback(() => {
     scrollerRef.current?.focus({ preventScroll: true });
@@ -634,7 +639,7 @@ export function TableView({
 
   return (
     <div
-      className={styles.scroller}
+      className={clsx(styles.scroller, wrap && styles.wrapped)}
       ref={scrollerRef}
       tabIndex={0}
       role="grid"
@@ -715,7 +720,11 @@ export function TableView({
               links={links}
               formulas={formulas}
               handlers={handlers}
-              style={{ transform: top, height: rowHeight }}
+              style={{
+                transform: top,
+                ...(wrap ? { minHeight: rowHeight } : { height: rowHeight }),
+              }}
+              {...(wrap ? { measureRef: virtualizer.measureElement, dataIndex: item.index } : {})}
             />
           );
         })}

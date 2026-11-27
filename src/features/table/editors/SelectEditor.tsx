@@ -10,6 +10,19 @@ import styles from './Editors.module.scss';
 
 type SelectField = FieldOf<'singleSelect'> | FieldOf<'multiSelect'>;
 
+/** Lists at least this long show the options already picked first, so they're easy to remove. */
+const PINNED_SELECTED_MIN = 10;
+
+/**
+ * Picked options first (in option order), then the rest. Uses the picks the editor opened
+ * with, so rows don't jump while options are toggled.
+ */
+function pinSelected<T extends { id: Id }>(options: readonly T[], picked: readonly Id[]): T[] {
+  if (picked.length === 0) return [...options];
+  const set = new Set(picked);
+  return [...options.filter((o) => set.has(o.id)), ...options.filter((o) => !set.has(o.id))];
+}
+
 /**
  * Single and multiple select: type to filter the options, Enter picks (or creates a new option),
  * arrows move. Multiple select stays open to pick more (Esc or Enter on an empty search closes
@@ -35,7 +48,9 @@ export function SelectEditor(props: EditorProps<SelectField>) {
     ? options
         .filter((o) => o.name.toLowerCase().includes(q))
         .sort((a, b) => rank(a.name) - rank(b.name))
-    : options;
+    : options.length >= PINNED_SELECTED_MIN
+      ? pinSelected(options, originalIds)
+      : options;
   const exact = options.some((o) => o.name.toLowerCase() === q);
   const canCreate = q !== '' && !exact;
   const itemCount = matches.length + (canCreate ? 1 : 0);

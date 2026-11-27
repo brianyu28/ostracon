@@ -332,6 +332,8 @@ export const ViewSchema = z.object({
     .optional(),
   /** Footer and group-header summaries, by field id. */
   summaries: z.record(IdSchema, SummarySchema).optional(),
+  /** Table: cells wrap their text and rows grow to fit (schema v2). */
+  wrap: z.literal(true).optional(),
   board: z
     .object({
       groupFieldId: IdSchema,

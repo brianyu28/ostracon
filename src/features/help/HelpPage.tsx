@@ -232,7 +232,7 @@ export function HelpPage() {
             </li>
             <li>
               <b>Export</b> a view as CSV, a collection (to import elsewhere) or its records as JSON
-              from its menu; the whole file as plain JSON from the file menu. Exports are never
+              from its menu; a copy of the whole file from the file menu. Exports are never
               encrypted.
             </li>
           </ul>

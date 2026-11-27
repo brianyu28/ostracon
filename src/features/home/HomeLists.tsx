@@ -9,6 +9,7 @@ import { formatRelativeTime, pluralize } from '@/lib/format';
 import { formatDate, today as todayDate } from '@/lib/date';
 import { useDocStore } from '@/store/docStore';
 import { useFormatContext } from '@/hooks/useFormatContext';
+import { usePrefs } from '@/store/prefsStore';
 import styles from './HomePage.module.scss';
 
 /** Recently edited records and records from this day in earlier years. */
@@ -16,8 +17,17 @@ export function HomeLists() {
   const doc = useDocStore((s) => s.doc);
   const format = useFormatContext();
   const today = todayDate();
-  const recent = useMemo(() => (doc ? recentRecords(doc, 20) : []), [doc]);
-  const anniversaries = useMemo(() => (doc ? onThisDay(doc, today) : []), [doc, today]);
+  const showOnThisDay = usePrefs((s) => s.homeOnThisDay);
+  const showRecent = usePrefs((s) => s.homeRecent);
+  const recentCount = usePrefs((s) => s.homeRecentCount);
+  const recent = useMemo(
+    () => (doc && showRecent ? recentRecords(doc, recentCount) : []),
+    [doc, showRecent, recentCount],
+  );
+  const anniversaries = useMemo(
+    () => (doc && showOnThisDay ? onThisDay(doc, today) : []),
+    [doc, today, showOnThisDay],
+  );
   if (!doc) return null;
 
   const row = (record: RecordEntity, detail: string, key: string) => {

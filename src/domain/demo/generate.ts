@@ -281,6 +281,7 @@ export function generateDemoDocument(options: DemoOptions): DocModel {
           ],
         },
         sorts: [{ fieldId: vDate, dir: 'desc' }],
+        wrap: true,
       },
     });
     run('createView', { collectionId: V.id, name: 'Calendar', layout: 'calendar' });

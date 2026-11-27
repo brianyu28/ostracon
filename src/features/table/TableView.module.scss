@@ -463,3 +463,41 @@ $row: var(--row-height, #{$row-height});
     right: -7px;
   }
 }
+
+// ── Wrapped text (a view setting) ─────────────────────────────────────────
+// Rows grow to fit their tallest cell; the virtualizer measures each one.
+
+.wrapped {
+  .row .gutter,
+  .row .cell {
+    height: auto;
+    min-height: $row;
+  }
+
+  .row .cell {
+    align-items: flex-start;
+    padding-top: calc((#{$row} - 18px) / 2);
+    // Less the bottom border, so a one-line row is exactly the row height.
+    padding-bottom: calc((#{$row} - 18px) / 2 - 1px);
+    line-height: 18px;
+
+    > span {
+      flex: 1;
+      flex-wrap: wrap;
+      row-gap: 2px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // Row numbers line up with the first line of text.
+  .row .gutter {
+    grid-template-rows: calc(#{$row} - 1px);
+    align-content: start;
+  }
+
+  .row .editing {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}

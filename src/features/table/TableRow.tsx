@@ -35,6 +35,9 @@ interface TableRowProps {
   formulas: FormulaReader;
   handlers: RowHandlers;
   style: CSSProperties;
+  /** Wrapped rows grow to fit, so the virtualizer measures them. */
+  measureRef?: ((el: HTMLElement | null) => void) | undefined;
+  dataIndex?: number | undefined;
 }
 
 /** A table row: gutter (number, checkbox, expand) and one cell per visible field. */
@@ -53,9 +56,13 @@ export const TableRow = memo(function TableRow({
   formulas,
   handlers,
   style,
+  measureRef,
+  dataIndex,
 }: TableRowProps) {
   return (
     <div
+      ref={measureRef}
+      data-index={dataIndex}
       role="row"
       aria-rowindex={index + 2}
       aria-selected={checked}
