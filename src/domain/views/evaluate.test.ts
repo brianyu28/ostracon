@@ -3,7 +3,7 @@ import { RAW_FORMAT } from '../fields/model';
 import { putRecord, type DocModel } from '../model';
 import type { Field, FilterGroup, RecordEntity, View } from '../schema/types';
 import { pointSpan, rangeSpan } from './dates';
-import { evaluateView } from './evaluate';
+import { evaluateView, pinRecord } from './evaluate';
 import { compileFilter, countConditions, type ViewContext } from './filter';
 import { groupRecords } from './groups';
 import { summarize } from './summaries';
@@ -213,5 +213,40 @@ describe('evaluateView', () => {
     );
     expect(grouped.groups?.map((g) => g.key)).toEqual(['false', 'true']);
     expect(grouped.records.map((r) => r.id)).toEqual(['r2', 'r3', 'r1']);
+  });
+});
+
+describe('pinRecord', () => {
+  const [r1, r2, r3] = records as [RecordEntity, RecordEntity, RecordEntity];
+  const fresh = rec('r4', {}, '4');
+
+  it('puts the record first, wherever it was or even when filtered out', () => {
+    expect(pinRecord({ records: [r1, r2, r3] }, r3).records.map((r) => r.id)).toEqual([
+      'r3',
+      'r1',
+      'r2',
+    ]);
+    expect(pinRecord({ records: [r1, r2] }, fresh).records.map((r) => r.id)).toEqual([
+      'r4',
+      'r1',
+      'r2',
+    ]);
+  });
+
+  it('takes the record out of its group and drops a group it leaves empty', () => {
+    const pinned = pinRecord(
+      {
+        records: [r1, r2, r3],
+        groups: [
+          { key: 'a', records: [r1, r2] },
+          { key: 'b', records: [r3] },
+        ],
+      },
+      r3,
+    );
+    expect(pinned.records.map((r) => r.id)).toEqual(['r3', 'r1', 'r2']);
+    expect(pinned.groups?.map((g) => [g.key, g.records.map((r) => r.id)])).toEqual([
+      ['a', ['r1', 'r2']],
+    ]);
   });
 });

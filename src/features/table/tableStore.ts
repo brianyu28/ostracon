@@ -30,6 +30,11 @@ interface TableState {
   panelOpen: boolean;
   /** Quick search text for the view. */
   search: string;
+  /**
+   * A record just added, shown at the top of the table (outside the view's sort, filter and
+   * groups) until the cursor leaves its row, so it stays in view while it's filled in.
+   */
+  pinned: Id | null;
 }
 
 const initial = {
@@ -39,7 +44,11 @@ const initial = {
   selected: new Set<Id>(),
   panelOpen: false,
   search: '',
+  pinned: null,
 };
+
+/** The pin is kept while the cursor stays on the pinned row. */
+const keepPin = (pinned: Id | null, row: Id) => (pinned === row ? pinned : null);
 
 export const tableStore = createStore<TableState>()(() => ({ viewId: null, ...initial }));
 
@@ -58,14 +67,20 @@ export const tableActions = {
       cursor: cell,
       anchor: extend ? (s.anchor ?? s.cursor) : null,
       editing: null,
+      pinned: keepPin(s.pinned, cell.row),
     }));
   },
   edit(cell: CellRef, initial?: string) {
-    tableStore.setState({
+    tableStore.setState((s) => ({
       cursor: cell,
       anchor: null,
       editing: initial === undefined ? { ...cell } : { ...cell, initial },
-    });
+      pinned: keepPin(s.pinned, cell.row),
+    }));
+  },
+  /** Pins a new record to the top and starts editing it. */
+  editNew(cell: CellRef) {
+    tableStore.setState({ cursor: cell, anchor: null, editing: { ...cell }, pinned: cell.row });
   },
   stopEditing() {
     tableStore.setState({ editing: null });

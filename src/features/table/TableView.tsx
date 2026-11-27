@@ -49,6 +49,10 @@ interface TableViewProps {
   records: readonly RecordEntity[];
   /** Groups, when the view is grouped (their records include collapsed ones). */
   groups?: readonly RecordGroup[] | undefined;
+  /** A record just added, shown first (above any groups). */
+  pinned?: RecordEntity | undefined;
+  /** The view's matching records, for the summary row. */
+  summaryRecords: readonly RecordEntity[];
   context: ViewContext;
   /** Records to act on: the checked rows, or the cursor's record. */
   onDeleteRecords: (ids: readonly Id[]) => void;
@@ -70,6 +74,8 @@ export function TableView({
   view,
   records,
   groups,
+  pinned,
+  summaryRecords,
   context,
   onDeleteRecords,
 }: TableViewProps) {
@@ -102,10 +108,6 @@ export function TableView({
   const columnFields = useMemo(() => columns.map((c) => c.field), [columns]);
   const rowIndex = useMemo(() => new Map(records.map((r, i) => [r.id, i])), [records]);
   const rect = selectionRect(cursor, anchor, rowIndex, columnFields);
-  const rowIndexRef = useRef(rowIndex);
-  useEffect(() => {
-    rowIndexRef.current = rowIndex;
-  }, [rowIndex]);
   const groupHeight = rowHeight + 6;
 
   // What the grid shows: group headers and the records of open groups.
@@ -121,6 +123,10 @@ export function TableView({
     }
     const collapsed = new Set(view.group?.collapsed ?? []);
     let index = 0;
+    if (pinned) {
+      ofRecord.push(rows.length);
+      rows.push({ kind: 'record', record: pinned, index: index++ });
+    }
     for (const group of groups) {
       const closed = collapsed.has(group.key);
       rows.push({ kind: 'group', group, collapsed: closed });
@@ -131,7 +137,7 @@ export function TableView({
       }
     }
     return { rows, ofRecord };
-  }, [groups, records, view.group?.collapsed]);
+  }, [groups, records, pinned, view.group?.collapsed]);
   const displayRef = useRef(display);
   useEffect(() => {
     displayRef.current = display;
@@ -535,13 +541,9 @@ export function TableView({
     if (!id) return;
     const primary = columns[0]?.field.id;
     if (primary) {
-      tableActions.edit({ row: id, field: primary });
-      // The row is placed (by the view's sort) on the next render; scroll to it then.
-      requestAnimationFrame(() => {
-        const row = rowIndexRef.current.get(id);
-        const shown = row === undefined ? undefined : displayRef.current.ofRecord[row];
-        if (shown !== undefined) virtualizer.scrollToIndex(shown, { align: 'auto' });
-      });
+      // Pinned to the top row until the cursor leaves it, so sorting doesn't move it away.
+      tableActions.editNew({ row: id, field: primary });
+      virtualizer.scrollToOffset(0);
     }
   };
 
@@ -758,7 +760,7 @@ export function TableView({
         view={view}
         columns={columns}
         width={width}
-        records={groups ? groups.flatMap((g) => g.records) : records}
+        records={summaryRecords}
         context={context}
         format={format}
       />

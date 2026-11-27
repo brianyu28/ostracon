@@ -58,3 +58,21 @@ export function evaluateView(doc: DocModel, view: View, options: EvaluateOptions
   const groups = groupRecords(records, groupField, view.group, options);
   return { records: groups.flatMap((g) => g.records), groups };
 }
+
+/**
+ * Moves one record to the top of a result, outside the sort, filter, search and groups. The
+ * table pins a record just added there so it stays in view while its values are filled in,
+ * even when they would sort, filter or group it elsewhere.
+ */
+export function pinRecord(result: ViewResult, record: RecordEntity): ViewResult {
+  const records = [record, ...result.records.filter((r) => r.id !== record.id)];
+  if (!result.groups) return { records };
+  const groups = result.groups
+    .map((g) =>
+      g.records.some((r) => r.id === record.id)
+        ? { ...g, records: g.records.filter((r) => r.id !== record.id) }
+        : g,
+    )
+    .filter((g) => g.records.length > 0);
+  return { records, groups };
+}

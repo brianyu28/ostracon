@@ -18,6 +18,7 @@ import { CollectionIcon } from '@/components/CollectionIcon/CollectionIcon';
 import { InlineEdit } from '@/components/InlineEdit/InlineEdit';
 import { getRecord } from '@/domain/model';
 import type { Field, Id } from '@/domain/schema/types';
+import { pinRecord } from '@/domain/views/evaluate';
 import { collectionFields } from '@/domain/views/repair';
 import { DeleteCollectionDialog } from '@/features/schema/DeleteCollectionDialog';
 import { deleteRecords } from '@/features/record/recordActions';
@@ -75,6 +76,7 @@ export function CollectionPage() {
   const selected = useTable((s) => s.selected);
   const panelOpen = useTable((s) => s.panelOpen);
   const cursorRow = useTable((s) => s.cursor?.row);
+  const pinnedId = useTable((s) => s.pinned);
 
   const viewMap = doc?.views;
   const views = useMemo(
@@ -92,12 +94,19 @@ export function CollectionPage() {
   );
 
   const result = useViewResult(view);
-  // The records the cursor moves through: all of them, or those in open groups.
+  // The table's rows: a record just added stays at the top until the cursor leaves it.
+  const pinned = doc && pinnedId ? getRecord(doc, collectionId, pinnedId) : undefined;
+  const tableResult = useMemo(
+    () => (pinned ? pinRecord(result, pinned) : result),
+    [result, pinned],
+  );
+  // The records the cursor moves through: all of them, or the pinned one and those in open groups.
   const records = useMemo(() => {
-    if (!result.groups) return result.records;
+    if (!tableResult.groups) return tableResult.records;
     const collapsed = new Set(view?.group?.collapsed ?? []);
-    return result.groups.filter((g) => !collapsed.has(g.key)).flatMap((g) => g.records);
-  }, [result, view?.group?.collapsed]);
+    const open = tableResult.groups.filter((g) => !collapsed.has(g.key)).flatMap((g) => g.records);
+    return pinned ? [pinned, ...open] : open;
+  }, [tableResult, pinned, view?.group?.collapsed]);
   const checkedIds = useMemo(
     () => result.records.filter((r) => selected.has(r.id)).map((r) => r.id),
     [result.records, selected],
@@ -356,7 +365,9 @@ export function CollectionPage() {
             collection={collection}
             view={view}
             records={records}
-            groups={result.groups}
+            groups={tableResult.groups}
+            pinned={pinned}
+            summaryRecords={result.records}
             context={result.context}
             onDeleteRecords={(ids: readonly Id[]) => {
               if (deleteRecords(collection.id, ids)) tableActions.setSelected([]);
