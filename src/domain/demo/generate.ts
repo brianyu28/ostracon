@@ -31,7 +31,7 @@ export interface DemoOptions {
 }
 
 /** mulberry32: tiny, fast, good-enough seeded PRNG. */
-function createRng(seed: number) {
+export function createRng(seed: number) {
   let a = seed >>> 0;
   const next = () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -58,6 +58,15 @@ function createRng(seed: number) {
 }
 
 const ID_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+/** Deterministic ids drawn from a seeded generator. */
+export function createIdMaker(rng: ReturnType<typeof createRng>) {
+  return (kind: IdKind): Id => {
+    let out = '';
+    for (let i = 0; i < 12; i++) out += ID_CHARS.charAt(Math.floor(rng.next() * 62));
+    return `${ID_PREFIXES[kind]}_${out}`;
+  };
+}
 
 const FIRST = [
   'Ada',
@@ -124,11 +133,7 @@ export function generateDemoDocument(options: DemoOptions): DocModel {
   const now = stamp(end);
   const pastDate = (maxDays: number) => addDays(end, -rng.int(0, maxDays));
 
-  const makeId = (kind: IdKind): Id => {
-    let out = '';
-    for (let i = 0; i < 12; i++) out += ID_CHARS.charAt(Math.floor(rng.next() * 62));
-    return `${ID_PREFIXES[kind]}_${out}`;
-  };
+  const makeId = createIdMaker(rng);
 
   const empty = createEmptyDocument({ appVersion: options.appVersion, now });
   empty.meta.fileId = makeId('file');

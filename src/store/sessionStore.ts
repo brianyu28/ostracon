@@ -653,7 +653,7 @@ export const session = {
     const doc =
       kind === 'demo'
         ? // Loaded on demand: the generator isn't needed for normal use.
-          (await import('@/domain/demo/generate')).generateDemoDocument({
+          (await import('@/domain/demo/showcase')).generateShowcaseDocument({
             endDate: today(),
             appVersion: __APP_VERSION__,
             seed: Date.now() % 100_000,

@@ -3,9 +3,6 @@
 This document explains how Ostracon is built: where data lives, how it is shaped and versioned,
 and how it is loaded, edited, saved, synced and encrypted.
 
-> Ostracon is early in development. This document describes what exists; sections grow as
-> features land.
-
 ## Contents
 
 1. [Principles](#1-principles)
@@ -27,12 +24,12 @@ and how it is loaded, edited, saved, synced and encrypted.
 - **No backend.** Ostracon is a static site. All logic runs in the browser and all data lives in
   a JSON file the user owns. The optional Dropbox sync talks to Dropbox directly from the
   browser.
-- **The file is the product.** Its format is documented, versioned and migrated forward forever.
+- **The file contains all data.** Its format is documented, versioned and migrated forward forever.
   A file written by any past version must open in every later version.
 - **Schema-driven.** Users define collections and their fields. The file stores the schema
   (collections, fields, views) alongside the data (records, links), and the app's behavior for a
   value comes from its field's type.
-- **Fast at scale.** Assume 50,000 records in a file and 10,000 in one collection. Lists are
+- **Fast at scale.** Supports tens of thousands of records. Lists are
   virtualized and derived data is incremental or memoized.
 - **Pure core.** Logic lives in `src/domain/`, which imports no React, no store and no UI
   library. That keeps it unit-testable and lets the Web Worker run it.
