@@ -464,8 +464,9 @@ $row: var(--row-height, #{$row-height});
   }
 }
 
-// ── Wrapped text (a view setting) ─────────────────────────────────────────
-// Rows grow to fit their tallest cell; the virtualizer measures each one.
+// ── Wrapped text (per field, per view) ──────────────────────────────────────
+// When any column wraps, rows grow to fit their tallest cell and the virtualizer measures
+// each one. Columns that don't wrap stay on one line, aligned to the top.
 
 .wrapped {
   .row .gutter,
@@ -483,11 +484,14 @@ $row: var(--row-height, #{$row-height});
 
     > span {
       flex: 1;
-      flex-wrap: wrap;
-      row-gap: 2px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
     }
+  }
+
+  .row .wrapCell > span {
+    flex-wrap: wrap;
+    row-gap: 2px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   // Row numbers line up with the first line of text.

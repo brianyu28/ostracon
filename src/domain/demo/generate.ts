@@ -281,8 +281,13 @@ export function generateDemoDocument(options: DemoOptions): DocModel {
           ],
         },
         sorts: [{ fieldId: vDate, dir: 'desc' }],
-        wrap: true,
       },
+    });
+    // Wrap the notes in this view.
+    const thisYearFields = draft.views[thisYear]?.fields ?? [];
+    run('setViewFields', {
+      id: thisYear,
+      fields: thisYearFields.map((f) => (f.fieldId === vNotes ? { ...f, wrap: true } : f)),
     });
     run('createView', { collectionId: V.id, name: 'Calendar', layout: 'calendar' });
     const wantToReturn = run('createView', {

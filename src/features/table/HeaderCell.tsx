@@ -1,5 +1,13 @@
 import { Menu, UnstyledButton } from '@mantine/core';
-import { IconArrowDown, IconArrowUp, IconEyeOff, IconPencil, IconTrash } from '@tabler/icons-react';
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconCheck,
+  IconEyeOff,
+  IconPencil,
+  IconTextWrap,
+  IconTrash,
+} from '@tabler/icons-react';
 import { clsx } from 'clsx';
 import { useState } from 'react';
 import { FieldTypeIcon } from '@/components/FieldTypeIcon/FieldTypeIcon';
@@ -13,6 +21,8 @@ export interface HeaderActions {
   sort: (column: Column, dir: 'asc' | 'desc') => void;
   hide: (column: Column) => void;
   remove: (column: Column) => void;
+  /** Turns text wrapping on or off for the column in this view. */
+  wrap: (column: Column, on: boolean) => void;
   /** Live width while dragging the edge; `done` when released. */
   resize: (column: Column, width: number, done: boolean) => void;
 }
@@ -100,6 +110,16 @@ export function HeaderCell({ column, sort, actions }: HeaderCellProps) {
             }}
           >
             Sort descending
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Item
+            leftSection={<IconTextWrap size={14} />}
+            rightSection={column.wrap ? <IconCheck size={14} /> : undefined}
+            onClick={() => {
+              actions.wrap(column, !column.wrap);
+            }}
+          >
+            Wrap text
           </Menu.Item>
           {!primary && (
             <>

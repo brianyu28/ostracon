@@ -108,7 +108,7 @@ A data file (`*.ostracon.json`) is a single JSON object:
 ```jsonc
 {
   "format": "ostracon",
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "meta": { "fileId", "revision", "createdAt", "savedAt", "savedBy", "appVersion" },
   "settings": { "locale", "weekStartsOn", "defaultCurrency" },
   "collections": [ … ],

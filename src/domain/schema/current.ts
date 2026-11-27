@@ -315,6 +315,8 @@ export const ViewSchema = z.object({
       fieldId: IdSchema,
       hidden: z.literal(true).optional(),
       width: z.number().int().min(40).max(2000).optional(),
+      /** Table: this column wraps its text and rows grow to fit (schema v3). */
+      wrap: z.literal(true).optional(),
     }),
   ),
   filter: FilterGroupSchema.optional(),
@@ -332,8 +334,6 @@ export const ViewSchema = z.object({
     .optional(),
   /** Footer and group-header summaries, by field id. */
   summaries: z.record(IdSchema, SummarySchema).optional(),
-  /** Table: cells wrap their text and rows grow to fit (schema v2). */
-  wrap: z.literal(true).optional(),
   board: z
     .object({
       groupFieldId: IdSchema,

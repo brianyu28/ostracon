@@ -53,7 +53,7 @@ export function TableCell({
   onOpenLink,
   handlers,
 }: TableCellProps) {
-  const { field, width, primary, left } = column;
+  const { field, width, primary, left, wrap } = column;
   const links = field.type === 'link' ? readLinks(record, field) : undefined;
   const missing = field.required === true && isEmpty(record, field, links);
   return (
@@ -63,6 +63,7 @@ export function TableCell({
       className={clsx(
         styles.cell,
         primary && styles.primary,
+        wrap && styles.wrapCell,
         isCursor && styles.cursor,
         inRange && styles.inRange,
         editor !== null && styles.editing,

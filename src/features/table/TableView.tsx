@@ -167,9 +167,10 @@ export function TableView({
     },
   });
 
-  const wrap = view.wrap === true;
+  // Rows are measured (and grow) only while some column wraps.
+  const wrap = columns.some((c) => c.wrap);
   // Sizes are cached by row key, and the virtualizer measures wrapped rows as they mount or
-  // resize. Only a new row height or wrap setting invalidates them. Resetting on data changes
+  // resize. Only a new row height or turning wrapping on or off invalidates them. Resetting on data changes
   // would drop measured heights of rows whose size didn't change, and nothing measures those again.
   useEffect(() => {
     virtualizer.measure();
@@ -603,6 +604,17 @@ export function TableView({
     },
     remove: (column) => {
       setDeletingField(column.field.id);
+    },
+    wrap: (column, on) => {
+      tryRun('setViewFields', {
+        id: view.id,
+        fields: view.fields.map((f) => {
+          if (f.fieldId !== column.field.id) return f;
+          const rest = { ...f };
+          delete rest.wrap;
+          return on ? { ...rest, wrap: true } : rest;
+        }),
+      });
     },
     resize: (column, w, done) => {
       if (!done) {

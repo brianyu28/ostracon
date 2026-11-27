@@ -77,10 +77,7 @@ export const duplicateView = defineCommand<{ id: Id }, Id>({
 
 /** View settings; `undefined` removes a setting. */
 export type ViewChanges = Partial<
-  Pick<
-    View,
-    'name' | 'layout' | 'filter' | 'sorts' | 'group' | 'summaries' | 'board' | 'calendar' | 'wrap'
-  >
+  Pick<View, 'name' | 'layout' | 'filter' | 'sorts' | 'group' | 'summaries' | 'board' | 'calendar'>
 >;
 
 export const updateView = defineCommand<{ id: Id; changes: ViewChanges }>({
@@ -106,7 +103,7 @@ export const updateView = defineCommand<{ id: Id; changes: ViewChanges }>({
 });
 
 /**
- * Sets the view's field order, visibility and widths. Fields of the collection missing from
+ * Sets the view's field order, visibility, widths and wrapping. Fields of the collection missing from
  * the list are kept, hidden, at the end, so a view always covers every field.
  */
 export const setViewFields = defineCommand<{ id: Id; fields: readonly ViewField[] }>({
@@ -124,6 +121,7 @@ export const setViewFields = defineCommand<{ id: Id; fields: readonly ViewField[
       const entry: ViewField = { fieldId: f.fieldId };
       if (f.hidden) entry.hidden = true;
       if (f.width !== undefined) entry.width = Math.round(Math.min(2000, Math.max(40, f.width)));
+      if (f.wrap) entry.wrap = true;
       list.push(entry);
     }
     for (const f of all) if (!seen.has(f.id)) list.push({ fieldId: f.id, hidden: true });

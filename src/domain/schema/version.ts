@@ -9,4 +9,4 @@ export const ENCRYPTED_FORMAT = 'ostracon-encrypted';
  *
  * v1 is released: never change a released schema in place (see docs/ARCHITECTURE.md §5).
  */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;

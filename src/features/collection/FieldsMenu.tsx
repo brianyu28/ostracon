@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Checkbox, Divider, Popover, Switch } from '@mantine/core';
+import { ActionIcon, Button, Checkbox, Popover } from '@mantine/core';
 import { IconList, IconSettings } from '@tabler/icons-react';
 import { FieldTypeIcon } from '@/components/FieldTypeIcon/FieldTypeIcon';
 import type { Collection, View } from '@/domain/schema/types';
@@ -76,18 +76,6 @@ export function FieldsMenu({
         )}
       </Popover.Target>
       <Popover.Dropdown className={styles.fieldsMenu}>
-        <Switch
-          size="xs"
-          label="Wrap text"
-          checked={view.wrap === true}
-          onChange={(e) => {
-            tryRun('updateView', {
-              id: view.id,
-              changes: { wrap: e.currentTarget.checked ? true : undefined },
-            });
-          }}
-        />
-        <Divider />
         {fields.map((f) => {
           const primary = f.id === collection.primaryFieldId;
           return (

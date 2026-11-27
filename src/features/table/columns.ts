@@ -31,6 +31,8 @@ export interface Column {
   primary: boolean;
   /** Left offset within the row (after the gutter). */
   left: number;
+  /** Wraps its text; rows grow to fit. */
+  wrap: boolean;
 }
 
 export function defaultWidth(field: Field, primary: boolean): number {
@@ -56,7 +58,7 @@ export function viewColumns(
     if (!field) return [];
     const primary = field.id === collection.primaryFieldId;
     const width = widths[field.id] ?? entry.width ?? defaultWidth(field, primary);
-    const column = { field, width, primary, left };
+    const column = { field, width, primary, left, wrap: entry.wrap === true };
     left += width;
     return [column];
   });
