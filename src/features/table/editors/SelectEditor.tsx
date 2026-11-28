@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { OptionChip } from '@/components/OptionChip/OptionChip';
 import type { FieldOf, Id } from '@/domain/schema/types';
-import { useEditorSession } from './useEditorSession';
+import { CLICK_OUTSIDE_EVENTS, useEditorSession } from './useEditorSession';
 import type { EditorChange, EditorProps } from './types';
 import styles from './Editors.module.scss';
 
@@ -108,6 +108,9 @@ export function SelectEditor(props: EditorProps<SelectField>) {
       width={260}
       withinPortal
       trapFocus={false}
+      clickOutsideEvents={CLICK_OUTSIDE_EVENTS}
+      // Outside the table, stay shown when iOS scrolls the page to clear the on-screen keyboard.
+      hideDetached={variant === 'cell'}
       shadow="md"
 
       closeOnEscape={false}

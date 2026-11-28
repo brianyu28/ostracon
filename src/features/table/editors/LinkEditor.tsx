@@ -7,7 +7,7 @@ import { recordTitle } from '@/domain/records';
 import type { FieldOf, Id } from '@/domain/schema/types';
 import { useDocStore } from '@/store/docStore';
 import { LinkChip } from '../cells/LinkChip';
-import { useEditorSession } from './useEditorSession';
+import { CLICK_OUTSIDE_EVENTS, useEditorSession } from './useEditorSession';
 import type { EditorChange, EditorProps } from './types';
 import styles from './Editors.module.scss';
 
@@ -99,6 +99,9 @@ export function LinkEditor(props: EditorProps<FieldOf<'link'>>) {
       width={300}
       withinPortal
       trapFocus={false}
+      clickOutsideEvents={CLICK_OUTSIDE_EVENTS}
+      // Outside the table, stay shown when iOS scrolls the page to clear the on-screen keyboard.
+      hideDetached={variant === 'cell'}
       shadow="md"
       closeOnEscape={false}
       onDismiss={() => {

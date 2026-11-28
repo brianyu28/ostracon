@@ -54,3 +54,10 @@ export function exitKey(e: { key: string; shiftKey: boolean }): EditorExit | und
   if (e.key === 'Enter') return null;
   return undefined;
 }
+
+/**
+ * What counts as a click outside an editor's popover. Not Mantine's default `mousedown`: on touch
+ * screens that is emulated after the tap ends, once focusing an input may have scrolled the page,
+ * so it can land outside a popover the finger was inside and close it.
+ */
+export const CLICK_OUTSIDE_EVENTS = ['pointerdown'];

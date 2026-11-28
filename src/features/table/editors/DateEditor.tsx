@@ -7,7 +7,7 @@ import { fieldType } from '@/domain/fields/registry';
 import type { DateRangeValue, Field, Value } from '@/domain/schema/types';
 import { partialStart, type PartialDate } from '@/lib/partialDate';
 import { editText } from './editText';
-import { exitKey, useEditorSession } from './useEditorSession';
+import { CLICK_OUTSIDE_EVENTS, exitKey, useEditorSession } from './useEditorSession';
 import type { EditorProps } from './types';
 import styles from './Editors.module.scss';
 
@@ -65,6 +65,9 @@ export function DateEditor(props: EditorProps) {
       offset={2}
       withinPortal
       trapFocus={false}
+      clickOutsideEvents={CLICK_OUTSIDE_EVENTS}
+      // Outside the table, stay shown when iOS scrolls the page to clear the on-screen keyboard.
+      hideDetached={variant === 'cell'}
       shadow="md"
       closeOnEscape={false}
       onDismiss={() => {

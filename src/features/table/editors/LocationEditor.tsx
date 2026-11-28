@@ -3,7 +3,7 @@ import { clsx } from 'clsx';
 import { useState } from 'react';
 import { LOCATION_PART_LABELS, locationText } from '@/domain/fields/types/other';
 import type { FieldOf, LocationPart, LocationValue } from '@/domain/schema/types';
-import { useEditorSession } from './useEditorSession';
+import { CLICK_OUTSIDE_EVENTS, useEditorSession } from './useEditorSession';
 import type { EditorChange, EditorProps } from './types';
 import styles from './Editors.module.scss';
 
@@ -30,6 +30,9 @@ export function LocationEditor(props: EditorProps<FieldOf<'location'>>) {
       offset={2}
       withinPortal
       trapFocus={false}
+      clickOutsideEvents={CLICK_OUTSIDE_EVENTS}
+      // Outside the table, stay shown when iOS scrolls the page to clear the on-screen keyboard.
+      hideDetached={variant === 'cell'}
       shadow="md"
       closeOnEscape={false}
       onDismiss={() => {

@@ -61,12 +61,13 @@ export function RecordDetails({ record, variant }: RecordDetailsProps) {
       format={format}
       parse={parse}
       settings={doc.settings}
+      // An editor that closed because another field was picked saves late: leave that one open.
       onCommit={(change) => {
         if (change) applyEdit(record.collectionId, record.id, field, change, parse);
-        setEditing(null);
+        setEditing((current) => (current === field.id ? null : current));
       }}
       onCancel={() => {
-        setEditing(null);
+        setEditing((current) => (current === field.id ? null : current));
       }}
     />
   );

@@ -3,7 +3,7 @@ import { clsx } from 'clsx';
 import { useState } from 'react';
 import { Markdown } from '@/components/Markdown/Markdown';
 import { markdownText } from '@/lib/markdown';
-import { useEditorSession } from './useEditorSession';
+import { CLICK_OUTSIDE_EVENTS, useEditorSession } from './useEditorSession';
 import type { EditorChange, EditorProps } from './types';
 import styles from './Editors.module.scss';
 
@@ -23,6 +23,9 @@ export function RichTextEditor(props: EditorProps) {
       offset={2}
       withinPortal
       trapFocus={false}
+      clickOutsideEvents={CLICK_OUTSIDE_EVENTS}
+      // Outside the table, stay shown when iOS scrolls the page to clear the on-screen keyboard.
+      hideDetached={variant === 'cell'}
       shadow="md"
       closeOnEscape={false}
       onDismiss={() => {
