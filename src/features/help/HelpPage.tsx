@@ -211,7 +211,7 @@ export function HelpPage() {
           <h2>Your file</h2>
           <ul className={styles.list}>
             <li>
-              Everything lives in one file you own (<code>.ostracon.json</code>), optionally
+              Everything lives in one file you own (<code>.ostraca.json</code>), optionally
               encrypted with a passphrase.
             </li>
             <li>
@@ -228,7 +228,7 @@ export function HelpPage() {
             <li>
               <b>Import</b> a CSV from a collection’s menu (or New collection): columns map to
               fields, new fields get a guessed type, link columns match titles. Import an exported
-              collection (or any Ostracon file) to copy its collections into this one.
+              collection (or any Ostraca file) to copy its collections into this one.
             </li>
             <li>
               <b>Export</b> a view as CSV, a collection (to import elsewhere) or its records as JSON

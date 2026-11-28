@@ -41,7 +41,7 @@ export function StorageSettings() {
       </Button>
       <Modal opened={confirming} onClose={close} title="Clear local data?" size="sm" centered>
         <Text size="sm" mb="md">
-          This closes the file, disconnects Dropbox and removes everything Ostracon keeps in this
+          This closes the file, disconnects Dropbox and removes everything Ostraca keeps in this
           browser: unsaved changes, remembered files, keys and device preferences. Your files on
           disk and in Dropbox are not affected.
         </Text>

@@ -72,8 +72,8 @@ function ImportBody({
   const [fileSource, setFileSource] = useState<CollectionSource | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  /** An Ostracon file (a collection export or a whole document): loaded, upgraded and checked in the worker. */
-  const loadOstracon = async (bytes: Uint8Array, name: string) => {
+  /** An Ostraca file (a collection export or a whole document): loaded, upgraded and checked in the worker. */
+  const loadOstraca = async (bytes: Uint8Array, name: string) => {
     setLoadError(null);
     try {
       const result = await io.decode(bytes);
@@ -123,7 +123,7 @@ function ImportBody({
     setFileName(file.name);
     if (/\.json$/i.test(file.name)) {
       setText('');
-      await loadOstracon(new Uint8Array(await file.arrayBuffer()), file.name);
+      await loadOstraca(new Uint8Array(await file.arrayBuffer()), file.name);
       return;
     }
     setLoadError(null);
@@ -246,7 +246,7 @@ function ImportBody({
           <Button
             disabled={!pastedJson && rows.length === 0}
             onClick={() => {
-              if (pastedJson) void loadOstracon(new TextEncoder().encode(text), 'Pasted JSON');
+              if (pastedJson) void loadOstraca(new TextEncoder().encode(text), 'Pasted JSON');
               else setMappings(initialMappings());
             }}
           >

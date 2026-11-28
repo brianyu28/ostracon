@@ -2,18 +2,21 @@
  * Optional encryption of data files with a passphrase, using WebCrypto only.
  *
  * An encrypted file is a small JSON envelope around the ordinary (plaintext) file bytes:
- *   { format: "ostracon-encrypted", envelopeVersion: 1, fileId,
+ *   { format: "ostraca-encrypted", envelopeVersion: 1, fileId,
  *     kdf: { name: "PBKDF2", hash: "SHA-256", iterations, salt },
  *     cipher: { name: "AES-GCM", iv }, payload }
  * - The key is derived from the passphrase with PBKDF2 (salt fixed per file, so a key
  *   remembered on a device keeps working); every save uses a fresh random IV.
  * - AES-GCM authenticates the data: a wrong passphrase or any tampering fails to decrypt.
  * - The file id is authenticated too (as additional data), so it can be used in clear to
- *   find a remembered key without being swappable.
+ *   find a remembered key without being swappable. So is the format string, which is
+ *   "ostracon-encrypted" in files written before the app was renamed: those are still
+ *   read (with their own format in the additional data) and saved again in the new format.
  * - The schema version lives inside the encrypted payload; `envelopeVersion` versions
  *   only this wrapper (e.g. a future move to Argon2).
  */
-import { ENCRYPTED_FORMAT } from '@/domain/schema/version';
+import { ENCRYPTED_FORMAT, ENCRYPTED_FORMATS } from '@/domain/schema/version';
+import type { LEGACY_ENCRYPTED_FORMAT } from '@/domain/schema/version';
 
 export const DEFAULT_ITERATIONS = 600_000;
 const MIN_ITERATIONS = 1_000;
@@ -26,7 +29,7 @@ export interface EncryptionInfo {
 }
 
 export interface Envelope {
-  format: typeof ENCRYPTED_FORMAT;
+  format: typeof ENCRYPTED_FORMAT | typeof LEGACY_ENCRYPTED_FORMAT;
   /** Typed loosely: envelopes are read from files and checked before use. */
   envelopeVersion: number;
   fileId: string;
@@ -52,7 +55,7 @@ function fromBase64(b64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-const aad = (fileId: string) => encoder.encode(`${ENCRYPTED_FORMAT}:1:${fileId}`);
+const aad = (format: Envelope['format'], fileId: string) => encoder.encode(`${format}:1:${fileId}`);
 
 export function randomSalt(): Uint8Array<ArrayBuffer> {
   return crypto.getRandomValues(new Uint8Array(16));
@@ -87,7 +90,7 @@ export async function encryptFile(
 ): Promise<Uint8Array> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv, additionalData: aad(fileId) },
+    { name: 'AES-GCM', iv, additionalData: aad(ENCRYPTED_FORMAT, fileId) },
     info.key,
     plaintext as Uint8Array<ArrayBuffer>,
   );
@@ -107,18 +110,19 @@ export async function encryptFile(
   return encoder.encode(JSON.stringify(envelope, null, 1) + '\n');
 }
 
-/** The envelope if these bytes are an encrypted Ostracon file, else null. */
+/** The envelope if these bytes are an encrypted Ostraca file, else null. */
 export function readEnvelope(bytes: Uint8Array): Envelope | null {
   // Cheap check before parsing: encrypted files are small JSON starting with the format.
   const head = decoder.decode(bytes.subarray(0, 200));
-  if (!head.includes(ENCRYPTED_FORMAT)) return null;
+  if (!ENCRYPTED_FORMATS.some((format) => head.includes(format))) return null;
   let parsed: unknown;
   try {
     parsed = JSON.parse(decoder.decode(bytes));
   } catch {
     return null;
   }
-  if (!isRecord(parsed) || parsed.format !== ENCRYPTED_FORMAT) return null;
+  if (!isRecord(parsed) || typeof parsed.format !== 'string') return null;
+  if (!ENCRYPTED_FORMATS.includes(parsed.format)) return null;
   // The envelope comes from an untrusted file: check its shape before using any of it.
   const { kdf, cipher } = parsed;
   const valid =
@@ -136,7 +140,7 @@ export function readEnvelope(bytes: Uint8Array): Envelope | null {
     isRecord(cipher) &&
     typeof cipher.name === 'string' &&
     typeof cipher.iv === 'string';
-  if (!valid) throw new Error('This encrypted file is damaged or wasn’t written by Ostracon.');
+  if (!valid) throw new Error('This encrypted file is damaged or wasn’t written by Ostraca.');
   return parsed as unknown as Envelope;
 }
 
@@ -162,11 +166,15 @@ export async function decryptFile(envelope: Envelope, key: CryptoKey): Promise<U
     envelope.cipher.name !== 'AES-GCM' ||
     envelope.kdf.name !== 'PBKDF2'
   ) {
-    throw new Error('This file was encrypted by a newer version of Ostracon.');
+    throw new Error('This file was encrypted by a newer version of Ostraca.');
   }
   try {
     const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: fromBase64(envelope.cipher.iv), additionalData: aad(envelope.fileId) },
+      {
+        name: 'AES-GCM',
+        iv: fromBase64(envelope.cipher.iv),
+        additionalData: aad(envelope.format, envelope.fileId),
+      },
       key,
       fromBase64(envelope.payload),
     );

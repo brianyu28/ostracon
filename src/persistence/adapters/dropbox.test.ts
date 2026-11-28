@@ -26,8 +26,8 @@ function fakeDropbox() {
       ? (JSON.parse(headers['Dropbox-API-Arg']) as Record<string, unknown>)
       : {};
     const meta = () => ({
-      name: 'life.ostracon.json',
-      path_display: '/life.ostracon.json',
+      name: 'life.ostraca.json',
+      path_display: '/life.ostraca.json',
       rev: server.rev,
       server_modified: '2026-11-01T00:00:00Z',
       size: server.content.length,
@@ -80,7 +80,7 @@ function fakeDropbox() {
 
 function signedIn() {
   localStorage.setItem(
-    'ostracon:dropbox',
+    'ostraca:dropbox',
     JSON.stringify({
       accessToken: 'token0',
       refreshToken: 'refresh',
@@ -132,7 +132,7 @@ describe('dropbox adapter', () => {
   it('rejects a sign-in response that does not match the request', async () => {
     fakeDropbox();
     sessionStorage.setItem(
-      'ostracon:dropbox-pending',
+      'ostraca:dropbox-pending',
       JSON.stringify({ verifier: 'v', state: 'expected', hash: '' }),
     );
     vi.stubGlobal('location', {
@@ -163,7 +163,7 @@ describe('dropbox adapter', () => {
   it('never shows the error text from the URL', async () => {
     fakeDropbox();
     sessionStorage.setItem(
-      'ostracon:dropbox-pending',
+      'ostraca:dropbox-pending',
       JSON.stringify({ verifier: 'v', state: 'expected', hash: '' }),
     );
     vi.stubGlobal('location', {
@@ -181,13 +181,13 @@ describe('dropbox adapter', () => {
   it('revokes access on disconnect, refreshing an expired token first', async () => {
     const { server } = fakeDropbox();
     localStorage.setItem(
-      'ostracon:dropbox',
+      'ostraca:dropbox',
       JSON.stringify({ accessToken: 'token0', refreshToken: 'refresh', expiresAt: 0 }),
     );
     expect(await disconnectDropbox()).toBe(true);
     expect(server.tokenCalls).toBe(1);
     expect(server.revokedWith).toEqual(['token1']);
-    expect(localStorage.getItem('ostracon:dropbox')).toBeNull();
+    expect(localStorage.getItem('ostraca:dropbox')).toBeNull();
   });
 
   it('retries the revoke with a fresh token when the access token was rejected', async () => {
@@ -212,12 +212,12 @@ describe('dropbox adapter', () => {
     const { server } = fakeDropbox();
     signedIn();
     const files = await listDropboxFiles();
-    expect(files.map((f) => f.name)).toEqual(['life.ostracon.json']);
+    expect(files.map((f) => f.name)).toEqual(['life.ostraca.json']);
 
     const opened = await dropboxAdapter.reopen!(undefined, {
       kind: 'dropbox',
-      name: 'life.ostracon.json',
-      path: '/life.ostracon.json',
+      name: 'life.ostraca.json',
+      path: '/life.ostraca.json',
     });
     expect(opened?.version).toEqual({ rev: 'r1' });
 

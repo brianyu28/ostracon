@@ -26,7 +26,7 @@ export function DropboxSettings() {
         <dt>Dropbox</dt>
         <dd>
           {connected
-            ? `Connected on this device. Files live in ${DROPBOX_FOLDER} in your Dropbox; Ostracon can’t see anything else there.`
+            ? `Connected on this device. Files live in ${DROPBOX_FOLDER} in your Dropbox; Ostraca can’t see anything else there.`
             : 'Keep your file in Dropbox to use it from several devices. Changes made on two devices are merged.'}
         </dd>
       </dl>

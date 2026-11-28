@@ -4,7 +4,7 @@
  * IndexedDB working copy. UI components call these actions and render the resulting state.
  *
  * Bytes in storage (files, the working copy, the merge base) are either plaintext
- * Ostracon JSON or, when encryption is on, an encrypted envelope around it.
+ * Ostraca JSON or, when encryption is on, an encrypted envelope around it.
  */
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
@@ -109,7 +109,7 @@ export interface SessionState {
   fileSize: number | null;
 }
 
-const DEVICE_ID_KEY = 'ostracon:device-id';
+const DEVICE_ID_KEY = 'ostraca:device-id';
 const WORKING_COPY_DEBOUNCE_MS = 500;
 
 function deviceId(): string {
@@ -454,7 +454,7 @@ function failOpen(fileName: string, error: LoadError | string) {
 
 function suggestedName(): string {
   const name = get().source?.name;
-  return name ?? `Ostracon ${today()}${FILE_EXTENSION}`;
+  return name ?? `Ostraca ${today()}${FILE_EXTENSION}`;
 }
 
 /** Identifying metadata of storage bytes (decrypting with known keys if needed). */
@@ -949,7 +949,7 @@ export const session = {
   },
 
   /**
-   * Removes all data Ostracon keeps in this browser (working copy, handles, keys, preferences)
+   * Removes all data Ostraca keeps in this browser (working copy, handles, keys, preferences)
    * and disconnects Dropbox. Resolves false if Dropbox access couldn't be revoked.
    */
   clearLocalData: async (): Promise<boolean> => {
@@ -957,7 +957,7 @@ export const session = {
     await session.close();
     await workingCopyStore.clearAll();
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('ostracon:')) localStorage.removeItem(key);
+      if (key.startsWith('ostraca:')) localStorage.removeItem(key);
     }
     setDropboxAppKey('');
     dropboxState.setState({ connected: false });

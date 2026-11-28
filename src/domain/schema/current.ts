@@ -1,5 +1,5 @@
 /**
- * The current schema of the Ostracon data file (version CURRENT_SCHEMA_VERSION), defined
+ * The current schema of the Ostraca data file (version CURRENT_SCHEMA_VERSION), defined
  * as zod schemas. Older versions exist only as fixtures plus the migrations that upgrade
  * them (see migrations/). The TypeScript types are inferred from these, so validation and
  * types can never drift apart.
@@ -373,7 +373,7 @@ export const TombstoneSchema = z.object({
   deletedAt: TimestampSchema,
 });
 
-export const OstraconFileSchema = z.object({
+export const OstracaFileSchema = z.object({
   format: z.literal(FILE_FORMAT),
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   meta: FileMetaSchema,

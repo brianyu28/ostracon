@@ -71,8 +71,8 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       manifest: {
-        name: 'Ostracon',
-        short_name: 'Ostracon',
+        name: 'Ostraca',
+        short_name: 'Ostraca',
         description: 'Your personal database, in a file you own.',
         theme_color: '#f7f8fa',
         background_color: '#ffffff',

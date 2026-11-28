@@ -20,7 +20,7 @@ export interface WorkingCopy {
 }
 
 let store: UseStore | undefined;
-const db = () => (store ??= createStore('ostracon', 'kv'));
+const db = () => (store ??= createStore('ostraca', 'kv'));
 
 const WORKING_COPY = 'working-copy';
 const handleKey = (fileId: string) => `handle:${fileId}`;
@@ -76,6 +76,6 @@ export const workingCopyStore = {
   },
   saveRecent: (recent: RecentFile) => set(RECENT, recent, db()),
 
-  /** Removes everything Ostracon stores in this browser's IndexedDB. */
+  /** Removes everything Ostraca stores in this browser's IndexedDB. */
   clearAll: () => clear(db()),
 };

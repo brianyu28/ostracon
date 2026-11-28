@@ -58,8 +58,8 @@ export function UpdatePrompt() {
       <span>
         {needRefresh
           ? updating
-            ? 'Updating Ostracon…'
-            : 'A new version of Ostracon is available.'
+            ? 'Updating Ostraca…'
+            : 'A new version of Ostraca is available.'
           : 'Ready to work offline.'}
       </span>
       {needRefresh && (

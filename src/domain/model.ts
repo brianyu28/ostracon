@@ -10,7 +10,7 @@ import type {
   FileSettings,
   Id,
   Link,
-  OstraconFile,
+  OstracaFile,
   RecordEntity,
   Tombstone,
   View,
@@ -156,7 +156,7 @@ const byCollectionOrder = (
   b: { collectionId: Id; order: number; id: Id },
 ) => compareText(a.collectionId, b.collectionId) || a.order - b.order || byId(a, b);
 
-export function fileToModel(file: OstraconFile): DocModel {
+export function fileToModel(file: OstracaFile): DocModel {
   const records: RecordStore = {};
   for (const r of file.records) putRecord({ records }, r);
   const links: LinkBuckets = {};
@@ -174,7 +174,7 @@ export function fileToModel(file: OstraconFile): DocModel {
 }
 
 /** Converts back to the file shape with a deterministic order (stable, diff-friendly output). */
-export function modelToFile(model: DocModel): OstraconFile {
+export function modelToFile(model: DocModel): OstracaFile {
   const v = <T>(m: EntityMap<T>) => Object.values(m);
   return {
     format: FILE_FORMAT,

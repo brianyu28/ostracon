@@ -6,7 +6,10 @@
 import type { OpenedFile, SaveResult, SourceDescriptor, StorageAdapter } from '../types';
 
 const PICKER_TYPES: FilePickerAcceptType[] = [
-  { description: 'Ostracon data file', accept: { 'application/json': ['.json', '.ostracon'] } },
+  {
+    description: 'Ostraca data file',
+    accept: { 'application/json': ['.json', '.ostraca', '.ostracon'] },
+  },
 ];
 
 export function isFsAccessSupported(): boolean {
@@ -52,7 +55,7 @@ export const fsAccessAdapter: StorageAdapter = {
   async open() {
     try {
       if (!window.showOpenFilePicker) return null;
-      const [handle] = await window.showOpenFilePicker({ types: PICKER_TYPES, id: 'ostracon' });
+      const [handle] = await window.showOpenFilePicker({ types: PICKER_TYPES, id: 'ostraca' });
       return handle ? await read(handle) : null;
     } catch (err) {
       if (isAbort(err)) return null;
@@ -107,7 +110,7 @@ export const fsAccessAdapter: StorageAdapter = {
       const handle = await window.showSaveFilePicker({
         suggestedName,
         types: PICKER_TYPES,
-        id: 'ostracon',
+        id: 'ostraca',
       });
       return await write(handle, bytes);
     } catch (err) {

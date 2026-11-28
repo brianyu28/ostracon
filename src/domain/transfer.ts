@@ -1,5 +1,5 @@
 /**
- * Moving collections between documents. A collection export is an ordinary Ostracon file that
+ * Moving collections between documents. A collection export is an ordinary Ostraca file that
  * holds only some collections, so it loads (and migrates, after a schema change) through the
  * same pipeline as a document; importing copies collections out of any loaded file.
  *

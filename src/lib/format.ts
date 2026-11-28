@@ -30,15 +30,18 @@ export function formatBytes(bytes: number): string {
   return `${value.toLocaleString(undefined, { maximumFractionDigits: value < 10 ? 1 : 0 })} ${units[unit] ?? ''}`;
 }
 
-/** Data file extensions, longest first: `.ostracon.json`, `.ostracon` and plain `.json`. */
-const FILE_EXTENSION_RE = /\.ostracon\.json$|\.ostracon$|\.json$/i;
+/**
+ * Data file extensions, longest first: `.ostraca.json`, `.ostraca`, the same two from before
+ * the rename (`.ostracon.json`, `.ostracon`) and plain `.json`.
+ */
+const FILE_EXTENSION_RE = /\.ostraca\.json$|\.ostraca$|\.ostracon\.json$|\.ostracon$|\.json$/i;
 
 /** The extension of a data file name ("" if it has none of the data file extensions). */
 export function fileExtension(name: string): string {
   return FILE_EXTENSION_RE.exec(name)?.[0] ?? '';
 }
 
-/** A file name for display: "Life.ostracon.json" → "Life". The real name is unchanged. */
+/** A file name for display: "Life.ostraca.json" → "Life". The real name is unchanged. */
 export function displayFileName(name: string): string {
   return name.replace(FILE_EXTENSION_RE, '') || name;
 }

@@ -24,11 +24,13 @@ const CONTENT = 'https://content.dropboxapi.com/2';
  * Where the app folder appears in the user's Dropbox. Dropbox names it after the Dropbox
  * app. Builds using their own Dropbox app should change this.
  */
-export const DROPBOX_FOLDER = 'Apps/Ostracon Database';
+/** The app's name in the Dropbox App Console, which is also the name of its app folder. */
+const DROPBOX_APP_NAME = 'Ostraca';
+export const DROPBOX_FOLDER = `Apps/${DROPBOX_APP_NAME}`;
 
-const TOKENS_KEY = 'ostracon:dropbox';
-const APP_KEY_KEY = 'ostracon:dropbox-app-key';
-const PENDING_KEY = 'ostracon:dropbox-pending';
+const TOKENS_KEY = 'ostraca:dropbox';
+const APP_KEY_KEY = 'ostraca:dropbox-app-key';
+const PENDING_KEY = 'ostraca:dropbox-pending';
 
 interface Tokens {
   accessToken: string;
@@ -179,8 +181,7 @@ function readPending(): { verifier: string; state: string; hash: string } | null
 }
 
 /** Shown when this device signed out but Dropbox couldn't be told to revoke access. */
-export const DROPBOX_NOT_REVOKED =
-  'Disconnected on this device, but Dropbox couldn’t be reached to revoke access. You can remove Ostracon under Connected apps in your Dropbox settings.';
+export const DROPBOX_NOT_REVOKED = `Disconnected on this device, but Dropbox couldn’t be reached to revoke access. You can remove ${DROPBOX_APP_NAME} under Connected apps in your Dropbox settings.`;
 
 /**
  * Signs out of Dropbox on this device and revokes the app's access, so a copy of the tokens
@@ -308,7 +309,7 @@ export async function listDropboxFiles(): Promise<DropboxFile[]> {
       cursor: string;
     };
     for (const e of page.entries) {
-      if (e['.tag'] === 'file' && /\.(json|ostracon)$/i.test(e.name)) files.push(toFile(e));
+      if (e['.tag'] === 'file' && /\.(json|ostraca|ostracon)$/i.test(e.name)) files.push(toFile(e));
     }
     if (!page.has_more) break;
     response = await call(`${API}/files/list_folder/continue`, {

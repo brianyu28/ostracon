@@ -36,7 +36,7 @@ export function WelcomeScreen() {
 
   return (
     <div className={styles.root}>
-      <h2 className={styles.title}>Welcome to Ostracon</h2>
+      <h2 className={styles.title}>Welcome to Ostraca</h2>
       <p className={styles.lede}>Your personal database</p>
       {loadError && (
         <Alert

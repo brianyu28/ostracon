@@ -39,7 +39,7 @@ describe('unencrypted copy dialog', () => {
     const resolve = vi.fn();
     sessionStore.setState({
       encryption,
-      unencryptedCopy: { fileName: 'life.ostracon.json', action: 'load', resolve },
+      unencryptedCopy: { fileName: 'life.ostraca.json', action: 'load', resolve },
     });
     render(<App />);
     expect(await screen.findByText('This copy isn’t encrypted')).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('unencrypted copy dialog', () => {
     const resolve = vi.fn();
     sessionStore.setState({
       encryption,
-      unencryptedCopy: { fileName: 'life.ostracon.json', action: 'merge', resolve },
+      unencryptedCopy: { fileName: 'life.ostraca.json', action: 'merge', resolve },
     });
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: 'Merge anyway' }));

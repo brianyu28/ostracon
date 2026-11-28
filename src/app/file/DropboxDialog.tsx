@@ -80,7 +80,7 @@ function SavePane() {
   const current = useSession((s) => s.source?.name);
   // The field shows the name without its extension; saving keeps the current file's
   // extension (or the default) unless one is typed.
-  const [name, setName] = useState(current ? displayFileName(current) : `Ostracon ${today()}`);
+  const [name, setName] = useState(current ? displayFileName(current) : `Ostraca ${today()}`);
   const trimmed = name.trim();
   const extension = (current && fileExtension(current)) || FILE_EXTENSION;
   const fileName = fileExtension(trimmed) ? trimmed : `${trimmed}${extension}`;

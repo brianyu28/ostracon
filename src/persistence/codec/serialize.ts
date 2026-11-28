@@ -4,7 +4,7 @@
  * files reasonably small while still being easy to read and diff.
  *
  *   {
- *     "format": "ostracon",
+ *     "format": "ostraca",
  *     "records": [
  *       {"id":"rec_…","collectionId":"col_…","values":{"fld_…":"Cafe Luna"},"createdAt":…},
  *       …
@@ -12,9 +12,9 @@
  *   }
  */
 import { modelToFile, type DocModel } from '@/domain/model';
-import type { OstraconFile } from '@/domain/schema/types';
+import type { OstracaFile } from '@/domain/schema/types';
 
-export function serializeFile(file: OstraconFile): string {
+export function serializeFile(file: OstracaFile): string {
   return write(file, '') + '\n';
 }
 

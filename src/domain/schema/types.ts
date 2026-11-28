@@ -10,7 +10,7 @@ export type { ISODate } from '@/lib/date';
 export type { LocalDateTime, PartialDate } from '@/lib/partialDate';
 
 export type Timestamp = string;
-export type OstraconFile = z.infer<typeof S.OstraconFileSchema>;
+export type OstracaFile = z.infer<typeof S.OstracaFileSchema>;
 export type FileMeta = z.infer<typeof S.FileMetaSchema>;
 export type FileSettings = z.infer<typeof S.FileSettingsSchema>;
 export type Color = z.infer<typeof S.ColorSchema>;

@@ -18,7 +18,7 @@ function writeDisk(bytes: Uint8Array): SaveResult {
   return {
     ok: true,
     version: { lastModified: disk.lastModified },
-    descriptor: { kind: 'fs-access', name: 'test.ostracon.json' },
+    descriptor: { kind: 'fs-access', name: 'test.ostraca.json' },
     handle: 'handle',
   };
 }
@@ -30,7 +30,7 @@ const memoryAdapter: StorageAdapter = {
     Promise.resolve(
       disk.bytes && {
         bytes: disk.bytes,
-        descriptor: { kind: 'fs-access', name: 'test.ostracon.json' },
+        descriptor: { kind: 'fs-access', name: 'test.ostraca.json' },
         version: { lastModified: disk.lastModified },
         handle: 'handle',
       },
@@ -80,7 +80,7 @@ describe('session', () => {
     await session.save();
     expect(diskRevision()).toBe(1);
     expect(selectIsDirty(docStore.getState())).toBe(false);
-    expect(sessionStore.getState().source?.name).toBe('test.ostracon.json');
+    expect(sessionStore.getState().source?.name).toBe('test.ostraca.json');
 
     await session.close();
     expect(docStore.getState().doc).toBeNull();
@@ -140,9 +140,7 @@ describe('session', () => {
   });
 
   it('shows a clear error for files from a newer app version', async () => {
-    disk.bytes = new TextEncoder().encode(
-      JSON.stringify({ format: 'ostracon', schemaVersion: 99 }),
-    );
+    disk.bytes = new TextEncoder().encode(JSON.stringify({ format: 'ostraca', schemaVersion: 99 }));
     await session.open();
     expect(sessionStore.getState().loadError?.message).toMatch(/schema version 99/);
   });
@@ -194,7 +192,7 @@ describe('encryption', () => {
     await session.setPassphrase('correct horse', false);
     await session.save();
     const text = new TextDecoder().decode(disk.bytes!);
-    expect(text).toContain('ostracon-encrypted');
+    expect(text).toContain('ostraca-encrypted');
     expect(text).not.toContain('Secret');
 
     await session.close();
@@ -246,7 +244,7 @@ describe('encryption', () => {
     // The next save puts the encrypted version back over the unencrypted copy.
     expect(selectIsDirty(docStore.getState())).toBe(true);
     await session.save();
-    expect(new TextDecoder().decode(disk.bytes!)).toContain('ostracon-encrypted');
+    expect(new TextDecoder().decode(disk.bytes!)).toContain('ostraca-encrypted');
   });
 
   it('loads the unencrypted copy when the user confirms', async () => {
@@ -267,7 +265,7 @@ describe('encryption', () => {
     await answerUnencryptedCopy(session.resolveConflict('merge'), false);
     // Back to the conflict, so another option can be chosen.
     expect(sessionStore.getState().conflict).not.toBeNull();
-    expect(new TextDecoder().decode(disk.bytes!)).not.toContain('ostracon-encrypted');
+    expect(new TextDecoder().decode(disk.bytes!)).not.toContain('ostraca-encrypted');
   });
 
   it('re-encrypts the local copies when encryption is turned on, and removes them on close', async () => {
@@ -283,7 +281,7 @@ describe('encryption', () => {
       await workingCopyStore.loadBase(fileId),
       (await workingCopyStore.load())?.bytes,
     ]) {
-      expect(text(bytes)).toContain('ostracon-encrypted');
+      expect(text(bytes)).toContain('ostraca-encrypted');
       expect(text(bytes)).not.toContain('Secret');
     }
 

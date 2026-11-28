@@ -63,4 +63,4 @@ export interface StorageAdapter {
   saveAs(bytes: Uint8Array, suggestedName: string): Promise<SaveResult>;
 }
 
-export const FILE_EXTENSION = '.ostracon.json';
+export const FILE_EXTENSION = '.ostraca.json';

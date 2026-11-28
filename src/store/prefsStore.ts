@@ -41,7 +41,7 @@ interface PrefsActions {
   resetKeybindings: () => void;
 }
 
-export const PREFS_STORAGE_KEY = 'ostracon:prefs';
+export const PREFS_STORAGE_KEY = 'ostraca:prefs';
 
 export const prefsStore = createStore<DevicePrefs & PrefsActions>()(
   persist(

@@ -2,7 +2,7 @@
 // so requests are free and unmetered). Routing is hash-based, so no SPA fallback is needed.
 // Custom domains are attached in the Cloudflare dashboard, keeping this file deployable by forks.
 {
-  "name": "ostracon",
+  "name": "ostraca",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",

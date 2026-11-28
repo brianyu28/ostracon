@@ -15,14 +15,14 @@ describe('file encryption', () => {
   it('round-trips with the right passphrase and a fresh IV each time', async () => {
     const salt = randomSalt();
     const info = { key: await deriveKey('correct horse', salt, ITER), salt, iterations: ITER };
-    const plain = new TextEncoder().encode('{"format":"ostracon"}');
+    const plain = new TextEncoder().encode('{"format":"ostraca"}');
     const a = await encryptFile(plain, 'fil_abc', info);
     const b = await encryptFile(plain, 'fil_abc', info);
     const envA = readEnvelope(a)!;
     expect(envA.fileId).toBe('fil_abc');
     expect(envA.cipher.iv).not.toBe(readEnvelope(b)!.cipher.iv);
     expect(new TextDecoder().decode(await decryptFile(envA, info.key))).toBe(
-      '{"format":"ostracon"}',
+      '{"format":"ostraca"}',
     );
     // A key derived again from the same passphrase and the file's salt works.
     const again = await deriveKey('correct horse', salt, ITER);
@@ -43,7 +43,7 @@ describe('file encryption', () => {
 
   it('ignores plaintext files', () => {
     expect(
-      readEnvelope(new TextEncoder().encode('{"format":"ostracon","schemaVersion":2}')),
+      readEnvelope(new TextEncoder().encode('{"format":"ostraca","schemaVersion":2}')),
     ).toBeNull();
   });
 
@@ -56,5 +56,41 @@ describe('file encryption', () => {
       /damaged/,
     );
     expect(() => readEnvelope(encode({ ...env, cipher: null }))).toThrow(/damaged/);
+  });
+
+  it('reads envelopes written before the rename, and saves them in the new format', async () => {
+    const salt = randomSalt();
+    const info = { key: await deriveKey('right', salt, ITER), salt, iterations: ITER };
+    const current = readEnvelope(await encryptFile(new Uint8Array([7, 8]), 'fil_abc', info))!;
+    expect(current.format).toBe('ostraca-encrypted');
+    // An old app authenticated its own format string ("ostracon-encrypted") with the file id.
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await crypto.subtle.encrypt(
+      {
+        name: 'AES-GCM',
+        iv,
+        additionalData: new TextEncoder().encode('ostracon-encrypted:1:fil_abc'),
+      },
+      info.key,
+      new Uint8Array([7, 8]),
+    );
+    const legacyBytes = new TextEncoder().encode(
+      JSON.stringify({
+        ...current,
+        format: 'ostracon-encrypted',
+        cipher: { name: 'AES-GCM', iv: btoa(String.fromCharCode(...iv)) },
+        payload: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+      }),
+    );
+    const legacy = readEnvelope(legacyBytes)!;
+    expect(legacy.format).toBe('ostracon-encrypted');
+    expect([...(await decryptFile(legacy, info.key))]).toEqual([7, 8]);
+    // The format is authenticated: relabelling either envelope fails to decrypt.
+    await expect(
+      decryptFile({ ...legacy, format: 'ostraca-encrypted' }, info.key),
+    ).rejects.toBeInstanceOf(WrongPassphraseError);
+    await expect(
+      decryptFile({ ...current, format: 'ostracon-encrypted' }, info.key),
+    ).rejects.toBeInstanceOf(WrongPassphraseError);
   });
 });

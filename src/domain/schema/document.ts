@@ -6,10 +6,15 @@
 import { fileToModel, type DocModel } from '../model';
 import { checkIntegrity, type IntegrityIssue } from './integrity';
 import { runMigrations, type JsonObject, type Migration } from './migrations';
-import type { OstraconFile } from './types';
-import { OstraconFileSchema } from './current';
+import type { OstracaFile } from './types';
+import { OstracaFileSchema } from './current';
 import type { LoadError } from './loadError';
-import { CURRENT_SCHEMA_VERSION, ENCRYPTED_FORMAT, FILE_FORMAT } from './version';
+import {
+  CURRENT_SCHEMA_VERSION,
+  ENCRYPTED_FORMATS,
+  FILE_FORMAT,
+  LEGACY_FILE_FORMAT,
+} from './version';
 
 export type { LoadError } from './loadError';
 
@@ -45,12 +50,17 @@ export function parseDocument(text: string): LoadResult {
 
 export function loadRawDocument(raw: unknown): LoadResult {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    return { ok: false, error: { kind: 'not-ostracon' } };
+    return { ok: false, error: { kind: 'not-ostraca' } };
   }
   const obj = raw as JsonObject;
-  if (obj.format === ENCRYPTED_FORMAT) return { ok: false, error: { kind: 'encrypted' } };
-  if (obj.format !== FILE_FORMAT || typeof obj.schemaVersion !== 'number') {
-    return { ok: false, error: { kind: 'not-ostracon' } };
+  if (typeof obj.format === 'string' && ENCRYPTED_FORMATS.includes(obj.format)) {
+    return { ok: false, error: { kind: 'encrypted' } };
+  }
+  // Files from before the rename (v3 and earlier) say "ostracon"; the v3 → v4 migration
+  // renames it, and a v4 file must say "ostraca" (the schema checks it).
+  const knownFormat = obj.format === FILE_FORMAT || obj.format === LEGACY_FILE_FORMAT;
+  if (!knownFormat || typeof obj.schemaVersion !== 'number') {
+    return { ok: false, error: { kind: 'not-ostraca' } };
   }
 
   const fileVersion = obj.schemaVersion;
@@ -67,7 +77,7 @@ export function loadRawDocument(raw: unknown): LoadResult {
   }
   const { doc, applied: migrated } = migration;
 
-  const parsed = OstraconFileSchema.safeParse(doc);
+  const parsed = OstracaFileSchema.safeParse(doc);
   if (!parsed.success) {
     const issues = parsed.error.issues
       .slice(0, MAX_REPORTED_ISSUES)
@@ -75,7 +85,7 @@ export function loadRawDocument(raw: unknown): LoadResult {
     return { ok: false, error: { kind: 'invalid-schema', issues } };
   }
 
-  const file: OstraconFile = parsed.data;
+  const file: OstracaFile = parsed.data;
   return {
     ok: true,
     model: fileToModel(file),

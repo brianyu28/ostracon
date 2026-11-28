@@ -42,7 +42,7 @@ export function Sidebar() {
     <nav className={styles.root} aria-label="Main" data-collapsed={collapsed || undefined}>
       <div className={styles.brand}>
         <AppLogo size={22} className={styles.logo} />
-        <span className={styles.name}>Ostracon</span>
+        <span className={styles.name}>Ostraca</span>
       </div>
       <div className={styles.items}>
         {top.map((route) => (

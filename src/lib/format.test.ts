@@ -3,6 +3,8 @@ import { displayFileName, fileExtension, formatBytes } from './format';
 
 describe('displayFileName', () => {
   it('hides data file extensions', () => {
+    expect(displayFileName('Budget.ostraca.json')).toBe('Budget');
+    expect(displayFileName('Budget.OSTRACA')).toBe('Budget');
     expect(displayFileName('Budget.ostracon.json')).toBe('Budget');
     expect(displayFileName('Budget.OSTRACON')).toBe('Budget');
     expect(displayFileName('Budget 2026.json')).toBe('Budget 2026');
@@ -11,6 +13,8 @@ describe('displayFileName', () => {
   });
 
   it('finds the extension to keep when renaming', () => {
+    expect(fileExtension('a.ostraca.json')).toBe('.ostraca.json');
+    expect(fileExtension('a.ostraca')).toBe('.ostraca');
     expect(fileExtension('a.ostracon.json')).toBe('.ostracon.json');
     expect(fileExtension('a.ostracon')).toBe('.ostracon');
     expect(fileExtension('a.json')).toBe('.json');

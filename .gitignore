@@ -1,5 +1,8 @@
 # Private notes, plans and personal data — never commit
 /local/
+*.ostraca.json
+*.ostraca.enc.json
+# Data files from before the rename to Ostraca
 *.ostracon.json
 *.ostracon.enc.json
 

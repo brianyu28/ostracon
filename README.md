@@ -1,8 +1,8 @@
-# Ostracon
+# Ostraca
 
-[Ostracon](https://ostracon.brianyu.me/) is a record-keeping web application for maintaining a personal database. Keep track of restaurants, books, movies, trips, or any other collections of your choice.
+[Ostraca](https://ostraca.brianyu.me/) is a record-keeping web application for maintaining a personal database. Keep track of restaurants, books, movies, trips, or any other collections of your choice.
 
-Your data is always yours: Ostracon has no servers and no accounts. Your data is kept in a single file that you own.
+Your data is always yours: Ostraca has no servers and no accounts. Your data is kept in a single file that you own.
 
 **Features**
 
@@ -12,7 +12,7 @@ Your data is always yours: Ostracon has no servers and no accounts. Your data is
 - Optional AES-256-GCM encryption.
 - Optional Dropbox sync.
 
-[Try Ostracon](https://ostracon.brianyu.me/) via **Try with demo data** on the welcome screen.
+[Try Ostraca](https://ostraca.brianyu.me/) via **Try with demo data** on the welcome screen.
 
 ## Development
 

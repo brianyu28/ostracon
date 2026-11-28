@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!--
-    Ostracon app icon: the source of truth for every icon size and format.
+    Ostraca app icon: the source of truth for every icon size and format.
     Three clay shards (ostraka) piled on a cream ground, darkest on top.
     Full-bleed square (no rounded corners): platforms that mask icons (iOS, Android) need it
     this way. The first <rect> is the background; everything after it is the mark, which the

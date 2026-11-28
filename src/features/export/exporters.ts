@@ -1,6 +1,6 @@
 /**
  * Exports: the current view as CSV (visible fields, filtered and sorted), a collection's records
- * as readable JSON (field names as keys), a collection as an Ostracon file (re-importable), or
+ * as readable JSON (field names as keys), a collection as an Ostraca file (re-importable), or
  * a copy of the whole document. Exports are never encrypted; when the file is, a toast says
  * so.
  */
@@ -17,8 +17,10 @@ import { clipboardText } from '@/features/table/selection';
 import { toCsv } from '@/lib/csv';
 import { extractCollections } from '@/domain/transfer';
 import { today } from '@/lib/date';
+import { displayFileName } from '@/lib/format';
 import { newId } from '@/lib/id';
 import { serializeModel } from '@/persistence/codec/serialize';
+import { FILE_EXTENSION } from '@/persistence/types';
 import { docStore } from '@/store/docStore';
 import { sessionStore } from '@/store/sessionStore';
 import { toast } from '@/store/toastStore';
@@ -122,7 +124,7 @@ export function exportCollectionJson(collection: Collection): void {
 }
 
 /**
- * A collection as an Ostracon file of its own, optionally with collections it links to (links
+ * A collection as an Ostraca file of its own, optionally with collections it links to (links
  * to collections left out are dropped). Re-importable into any document, also after a schema
  * change (it migrates like any file), and openable on its own. A new file id keeps it from being
  * mistaken for the document it came from.
@@ -139,17 +141,17 @@ export function exportCollectionFile(collection: Collection, include: readonly I
     savedAt: null,
     savedBy: null,
   };
-  download(`${collection.name}.ostracon.json`, serializeModel(part), 'application/json');
+  download(`${collection.name}${FILE_EXTENSION}`, serializeModel(part), 'application/json');
   warnIfEncrypted();
 }
 
-/** A copy of the whole document as an Ostracon file (never encrypted). */
+/** A copy of the whole document as an Ostraca file (never encrypted). */
 export function exportDocumentJson(): void {
   const doc = docStore.getState().doc;
   if (!doc) return;
-  const name =
-    sessionStore.getState().source?.name.replace(/\.ostracon\.json$|\.json$/, '') ?? 'Ostracon';
+  const source = sessionStore.getState().source;
+  const name = source ? displayFileName(source.name) : 'Ostraca';
   const suffix = sessionStore.getState().encryption ? 'unencrypted copy' : 'copy';
-  download(`${name} (${suffix}).ostracon.json`, serializeModel(doc), 'application/json');
+  download(`${name} (${suffix})${FILE_EXTENSION}`, serializeModel(doc), 'application/json');
   warnIfEncrypted();
 }

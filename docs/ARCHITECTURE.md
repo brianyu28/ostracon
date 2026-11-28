@@ -1,6 +1,6 @@
-# Ostracon architecture
+# Ostraca architecture
 
-This document explains how Ostracon is built: where data lives, how it is shaped and versioned,
+This document explains how Ostraca is built: where data lives, how it is shaped and versioned,
 and how it is loaded, edited, saved, synced and encrypted.
 
 ## Contents
@@ -21,7 +21,7 @@ and how it is loaded, edited, saved, synced and encrypted.
 
 ## 1. Principles
 
-- **No backend.** Ostracon is a static site. All logic runs in the browser and all data lives in
+- **No backend.** Ostraca is a static site. All logic runs in the browser and all data lives in
   a JSON file the user owns. The optional Dropbox sync talks to Dropbox directly from the
   browser.
 - **The file contains all data.** Its format is documented, versioned and migrated forward forever.
@@ -100,12 +100,12 @@ ESLint enforces the layering. `domain/` and `lib/` may not import from `store/`,
 
 ## 4. The data file
 
-A data file (`*.ostracon.json`) is a single JSON object:
+A data file (`*.ostraca.json`) is a single JSON object:
 
 ```jsonc
 {
-  "format": "ostracon",
-  "schemaVersion": 3,
+  "format": "ostraca",
+  "schemaVersion": 4,
   "meta": { "fileId", "revision", "createdAt", "savedAt", "savedBy", "appVersion" },
   "settings": { "locale", "weekStartsOn", "defaultCurrency" },
   "collections": [ … ],
@@ -119,6 +119,11 @@ A data file (`*.ostracon.json`) is a single JSON object:
 
 The authoritative definition is `src/domain/schema/current.ts`. TypeScript types are inferred
 from it (`schema/types.ts`), so types and validation cannot drift apart.
+
+The app was called Ostracon until schema v4. Files from v3 and earlier say `"format": "ostracon"`
+and are usually named `*.ostracon.json`: they still open, the v3 → v4 migration renames the
+format, and the extensions `.ostracon.json` and `.ostracon` are still recognized. A v4 file must
+say `"ostraca"`.
 
 ### Conventions
 
@@ -435,7 +440,7 @@ envelope:
 
 ```jsonc
 {
-  "format": "ostracon-encrypted",
+  "format": "ostraca-encrypted",
   "envelopeVersion": 1,
   "fileId": "fil_…",
   "kdf": { "name": "PBKDF2", "hash": "SHA-256", "iterations": 600000, "salt": "…" },
@@ -445,7 +450,11 @@ envelope:
 ```
 
 - The key is derived from the passphrase with PBKDF2. The salt is fixed per file and the IV is
-  fresh on every save. The file id is bound as additional authenticated data.
+  fresh on every save. The format string and the file id are bound as additional authenticated
+  data (`"<format>:1:<fileId>"`).
+- Envelopes written before the rename say `"ostracon-encrypted"` and authenticate that string.
+  They are still read, with their own format in the additional data, and saved again as
+  `"ostraca-encrypted"`.
 - The working copy and the merge base are stored encrypted too. A device can remember the key as
   a **non-extractable** `CryptoKey` in IndexedDB. Otherwise the passphrase is asked for on open.
 - The plaintext inside the envelope is a normal data file, so schema versioning is independent

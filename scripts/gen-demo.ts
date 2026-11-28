@@ -1,6 +1,6 @@
 /**
  * Writes a synthetic demo data file.
- *   pnpm gen:demo --records 24 --seed 42 --end 2026-11-26 --out demo.ostracon.json
+ *   pnpm gen:demo --records 24 --seed 42 --end 2026-11-26 --out demo.ostraca.json
  */
 import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
@@ -15,7 +15,7 @@ const { values } = parseArgs({
     records: { type: 'string', default: '24' },
     seed: { type: 'string', default: '42' },
     end: { type: 'string', default: today() },
-    out: { type: 'string', default: 'demo.ostracon.json' },
+    out: { type: 'string', default: 'demo.ostraca.json' },
     'app-version': { type: 'string', default: 'demo' },
   },
 });

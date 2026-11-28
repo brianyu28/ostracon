@@ -50,7 +50,7 @@ describe('parseDocument', () => {
   });
 
   it('rejects files from a newer app version', () => {
-    const text = JSON.stringify({ format: 'ostracon', schemaVersion: CURRENT_SCHEMA_VERSION + 1 });
+    const text = JSON.stringify({ format: 'ostraca', schemaVersion: CURRENT_SCHEMA_VERSION + 1 });
     expect(parseDocument(text)).toEqual({
       ok: false,
       error: {
@@ -61,16 +61,32 @@ describe('parseDocument', () => {
     });
   });
 
-  it('recognizes non-Ostracon, invalid and encrypted files', () => {
+  it('recognizes non-Ostraca, invalid and encrypted files', () => {
     expect(parseDocument('{nope')).toMatchObject({ ok: false, error: { kind: 'invalid-json' } });
-    expect(parseDocument('[1,2]')).toMatchObject({ ok: false, error: { kind: 'not-ostracon' } });
+    expect(parseDocument('[1,2]')).toMatchObject({ ok: false, error: { kind: 'not-ostraca' } });
     expect(parseDocument('{"format":"other"}')).toMatchObject({
       ok: false,
-      error: { kind: 'not-ostracon' },
+      error: { kind: 'not-ostraca' },
+    });
+    expect(parseDocument('{"format":"ostraca-encrypted"}')).toMatchObject({
+      ok: false,
+      error: { kind: 'encrypted' },
     });
     expect(parseDocument('{"format":"ostracon-encrypted"}')).toMatchObject({
       ok: false,
       error: { kind: 'encrypted' },
+    });
+  });
+
+  it('accepts the pre-rename "ostracon" format only on files from before the rename', () => {
+    const current = JSON.parse(fixture(CURRENT_SCHEMA_VERSION)) as { format: string };
+    expect(current.format).toBe('ostraca');
+    const old = parseDocument(fixture(3));
+    expect(old.ok && serializeModel(old.model)).toContain('"format": "ostraca"');
+    current.format = 'ostracon';
+    expect(parseDocument(JSON.stringify(current))).toMatchObject({
+      ok: false,
+      error: { kind: 'invalid-schema' },
     });
   });
 

@@ -1,6 +1,6 @@
 # Agent & contributor guide
 
-Ostracon is a client-side-only record-keeping PWA: React + TypeScript, no backend. User data
+Ostraca is a client-side-only record-keeping PWA: React + TypeScript, no backend. User data
 lives in a versioned JSON file the user owns; the app opens, edits and saves it. A document holds
 user-defined **collections** of **records**, each collection with its own **fields** and
 **views**.
@@ -58,7 +58,7 @@ Other single sources of truth:
 
 - **Public repository: never commit personal data.** No real names, places or data files in
   code, tests, fixtures, screenshots or commit messages. Use synthetic data. Data files
-  (`*.ostracon.json`) are gitignored.
+  (`*.ostraca.json`) are gitignored.
 - **`domain/` and `lib/` stay pure**: no React, Mantine, store or feature imports (ESLint
   enforces this). Logic goes here so it is testable and reusable from Web Workers.
 - **Dates are `YYYY-MM-DD` strings** (`ISODate`), compared lexically. No time zones, no `Date`

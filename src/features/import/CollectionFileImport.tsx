@@ -10,7 +10,7 @@ import { pluralize } from '@/lib/format';
 import { toastWithUndo, tryDispatch } from '@/store/actions';
 import styles from './ImportDialog.module.scss';
 
-/** A loaded Ostracon file (a collection export or a whole document) to copy collections from. */
+/** A loaded Ostraca file (a collection export or a whole document) to copy collections from. */
 export interface CollectionSource {
   model: DocModel;
   name: string;
@@ -19,7 +19,7 @@ export interface CollectionSource {
   issues: number;
 }
 
-/** Choosing which collections of an Ostracon file to add to this document. */
+/** Choosing which collections of an Ostraca file to add to this document. */
 export function CollectionFileImport({
   source,
   onBack,

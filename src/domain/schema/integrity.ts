@@ -7,7 +7,7 @@
 import { fieldType } from '../fields/registry';
 import { canonicalFieldId, isSymmetric } from '../links';
 import { repairView } from '../views/repair';
-import type { Field, Id, OstraconFile } from './types';
+import type { Field, Id, OstracaFile } from './types';
 
 export interface IntegrityIssue {
   entityId: string;
@@ -17,7 +17,7 @@ export interface IntegrityIssue {
 /** Stop collecting after this many issues (a badly damaged file would otherwise flood the UI). */
 const MAX_ISSUES = 200;
 
-export function checkIntegrity(file: OstraconFile): IntegrityIssue[] {
+export function checkIntegrity(file: OstracaFile): IntegrityIssue[] {
   const issues: IntegrityIssue[] = [];
   const report = (entityId: string, message: string) => {
     if (issues.length < MAX_ISSUES) issues.push({ entityId, message });

@@ -1,4 +1,4 @@
-/** Importing collections from another Ostracon file: one undo step. */
+/** Importing collections from another Ostraca file: one undo step. */
 import type { DocModel } from '../model';
 import type { Id } from '../schema/types';
 import { addCopied, copyCollections, extractCollections } from '../transfer';
